@@ -36,4 +36,3 @@ target_include_directories(dcco_svp PUBLIC
                            "${VITA_INCLUDE_DIRS}"
                            "${VTK_INCLUDE_DIRS}"
                            )
-

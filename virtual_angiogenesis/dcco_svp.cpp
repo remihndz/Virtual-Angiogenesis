@@ -36,11 +36,6 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
 		 double theta_min)
 {
   
-  // Boundary conditions
-  double q0 {10};
-  double r0 {0.1};
-  point x0 {-2.99, 2.9, 0.0};
-
   // Simulation parameters for each stage
   GeneratorData *gen_data = new GeneratorData(16000, N_fail, l_lim_fr, perfusion_area_factor,
 						close_neighborhood_factor, 0.25, Delta_nu, 0, false);
@@ -62,7 +57,14 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
   staged_domain->addStage(n_term_2, domain_2);
   cout << "Staged domain initiated." << endl;
 
-  // SingleVesselCCOOTree *tree = new SingleVesselCCOOTree(input_cco, gen_data, q0, gam, delta, eta, 0.0, 1e-4);
+  // Checking that the root tree's .cco file exists
+  ifstream is_root_tree_correct {root_tree_filename};
+  if (!is_root_tree_correct){
+    cerr << "Error: file could not be opened. The root tree's .cco file could not be found." << endl;
+    exit(1);
+  }
+  is_root_tree_correct.close();
+  
   SingleVesselCCOOTree *tree = new SingleVesselCCOOTree(root_tree_filename, gen_data, gam, delta, eta);
 
   tree->setIsInCm(true);
@@ -188,18 +190,22 @@ int main(int argc, char *argv[])
   
   // Copying the config file in the output folder
   string root_results {output_filename.substr(0, output_filename.find_last_of("/"))};
+  string filename {ConfigurationFileName.substr(ConfigurationFileName.find_last_of("/") + 1)};
   string command {"mkdir -p " + root_results};
   const int dir_err = system(command.c_str());
   if (-1 == dir_err)
     {
-      printf("Error creating directory!n");
+      printf("Error creating directory!\n");
       exit(1);
     }
-  ofstream copyfile(root_results + "/config.dat");
-  copyfile << config.rdbuf();
-  copyfile.close();
+  command = {"cp " + ConfigurationFileName + " " + root_results + "/" + filename};
+  const int copy_err = system(command.c_str());
+  if (-1 == copy_err)
+    {
+      printf("Error copying the config file!\n");
+      exit(1);
+    }
   
-  config.close();
   cout << "Simulation parameters read successfully." << endl;
 
   // Consecutive attempts to generate a point - N_fail

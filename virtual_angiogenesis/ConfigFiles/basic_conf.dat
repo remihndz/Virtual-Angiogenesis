@@ -1,6 +1,6 @@
 // // // Files (vtkPolyData and .cco) describing the domain to be vascularized
 // Output filename (without extension)
-../perfused_geometries/SVP
+../perfused_geometries/basicSVP
 // // Hull of the domain
 ../base_geometries/hull.vtk
 // // Domain 1 - Non vascular regions - first line is the number of regions followed by the .vtk files
@@ -14,8 +14,8 @@
 ../base_geometries/backbone.cco
 // // // Simulation parameters
 // Number of terminal vessels for each stage
-500
-500
+2000
+1000
 // l_lim_fr - Correction step factor - Eq (14)
 0.9
 // gamma - Power law coefficient in Murray's law - Eq (3)
