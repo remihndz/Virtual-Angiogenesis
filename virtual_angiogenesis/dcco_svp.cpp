@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
   // Buffer size for random point generation
   int n_draw {10000};
   // Random seed
-  int seed {2208};
+  long long int seed {time(nullptr)};
   
   Vascularise(output_filename, input_cco, Hull, NVR_1, NVR_2, n_term_1, n_term_2,
 	      gam, delta, eta, n_draw, seed, N_fail, l_lim_fr,
