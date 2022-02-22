@@ -116,10 +116,10 @@ int CreateVascularAndAvascularRegions(double FOV_in_cm, double FAZ_in_cm)
   // Create the hull, i.e., the square representing the OCTA FOV 
   {
     vtkNew<vtkPoints> points;
-    points->InsertNextPoint(-FOV_in_cm, -FOV_in_cm, 0.0);
-    points->InsertNextPoint(FOV_in_cm, -FOV_in_cm, 0.0);
-    points->InsertNextPoint(FOV_in_cm, FOV_in_cm, 0.0);
-    points->InsertNextPoint(-FOV_in_cm, FOV_in_cm, 0.0);
+    points->InsertNextPoint(-FOV_in_cm/2., -FOV_in_cm/2., 0.0);
+    points->InsertNextPoint(FOV_in_cm/2., -FOV_in_cm/2., 0.0);
+    points->InsertNextPoint(FOV_in_cm/2., FOV_in_cm/2., 0.0);
+    points->InsertNextPoint(-FOV_in_cm/2., FOV_in_cm/2., 0.0);
 
     std::cout << "Points created." << std::endl;
   
@@ -149,7 +149,7 @@ int CreateVascularAndAvascularRegions(double FOV_in_cm, double FAZ_in_cm)
   
     // Save the polydata
     vtkNew<vtkPolyDataWriter> writer;
-    std::string fileName = "../../base_geometries/hull.vtk";
+    std::string fileName = "../../base_geometries/VTKFiles/hull.vtk";
     writer->SetFileName(fileName.c_str());
     writer->SetInputData(aPolyData);
     writer->Write();
@@ -162,7 +162,7 @@ int CreateVascularAndAvascularRegions(double FOV_in_cm, double FAZ_in_cm)
     disk->SetNumberOfSides(50);
     disk->SetRadius(FOV_in_cm/3.0);
     disk->Update();  
-    std::string fileName = "../../base_geometries/non_vascular_region_1.vtk";
+    std::string fileName = "../../base_geometries/VTKFiles/non_vascular_region_1.vtk";
 
     vtkNew<vtkPolyDataWriter> writer;
     writer->SetFileName(fileName.c_str());
@@ -179,14 +179,14 @@ int CreateVascularAndAvascularRegions(double FOV_in_cm, double FAZ_in_cm)
     disk->SetCenter(0,0,0);
     disk->Update();  
 
-    std::string fileName = "../../base_geometries/non_vascular_region_2_inner.vtk";
+    std::string fileName = "../../base_geometries/VTKFiles/non_vascular_region_2_inner.vtk";
     vtkNew<vtkPolyDataWriter> writer;
     writer->SetFileName(fileName.c_str());
     writer->SetInputData(disk->GetOutput());
     writer->Write();
     std::cout << "Inner Non Vascular Region for stage 2 written in " << fileName << std::endl;
 
-    fileName = "../../base_geometries/non_vascular_region_2_outer.vtk";
+    fileName = "../../base_geometries/VTKFiles/non_vascular_region_2_outer.vtk";
     CreateSquareWithCircularHole(fileName, FOV_in_cm, FOV_in_cm/3.0);
     std::cout << "Outer Non Vascular Region for stage 2 written in " << fileName << std::endl;
   }
@@ -196,14 +196,14 @@ int main()
 {
   std::cout << "Starting creation of vascular and non vascular regions for a 2 stages CCO growth..." << std::endl;
 
-  const int dir_err = std::system("mkdir -p ../../base_geometries/");
+  const int dir_err = std::system("mkdir -p ../../base_geometries/VTKFiles/");
   if (-1 == dir_err)
     {
       printf("Error creating directory!n");
       exit(1);
     }
 
-  double FOV_in_cm = 0.6;	// Field of View, typically 6mm or 3mm
+  double FOV_in_cm = 0.3;	// Field of View, typically 6mm or 3mm
   double FAZ_in_cm = 0.05;	// Foveal Avascular Zone, typically the FAZ has a diameter of 0.5mm in the SVP
   
   CreateVascularAndAvascularRegions(FOV_in_cm, FAZ_in_cm);
