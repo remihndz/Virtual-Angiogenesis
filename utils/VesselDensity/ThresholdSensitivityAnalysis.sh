@@ -27,6 +27,7 @@ do
 done
 
 # Test segmented images as well
+threshold="0"
 outputfile="SensitivityToThreshold_segmentedImages.dat"
 rm $outputfile
 for filename in /mnt/c/Users/rhernand/Desktop/OCTADataSets/ROSE-dataset/data/ROSE-1/SVC/test/gt/*.tif;

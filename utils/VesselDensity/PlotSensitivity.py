@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 with open('SensitivityToThreshold.dat') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=' ')
+    row = next(csv_reader)
     raw_data = []
     for row in csv_reader:
         raw_data.append(row)
@@ -25,11 +26,12 @@ threshold = np.array([thresh for misc, vd, thresh in raw_data])[:count].astype(f
 mean = np.mean(vascularDensity, axis=0)
 std  = np.std(vascularDensity, axis=0)
 
-plt.plot(threshold, mean, color='blue')
+plt.plot(threshold, mean, color='blue', label=u"Mean \u00B1 std on raw en-face images.")
 plt.fill_between(threshold, mean-std, mean+std, color='blue', alpha=0.5)
 
 with open('SensitivityToThreshold_segmentedImages.dat') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=' ')
+    row = next(csv_reader)
     raw_data = []
     for row in csv_reader:
         raw_data.append([row[2], row[1]])
@@ -37,13 +39,14 @@ with open('SensitivityToThreshold_segmentedImages.dat') as csv_file:
 
 # Compute mean and std
 data = np.array(raw_data).astype(float)
-
 mean = np.mean(data[:,1], axis=0)
 std  = np.std(data[:,1], axis=0)
 
-plt.plot(threshold, mean, color='yellow')
-plt.fill_between(threshold, mean-std, mean+std, color='yellow', alpha=0.5)
-plt.plot([0,255], [mean, mean], color='yellow')
-plt.fill_between([0,255], [mean-std, mean-std], [mean+std, mean+std], color='yellow', alpha=0.5)
+plt.plot([0,255], [mean, mean], color='red', linewidth=2, label=u"Mean \u00B1 std on segmented vasculature.")
+plt.fill_between([0,255], [mean-std, mean-std], [mean+std, mean+std], color='red', alpha=0.5)
 
+plt.xlabel("Threshold value")
+plt.ylabel("Vessel density (%)")
+plt.title("Sensitivity analysis of the vessel density measure to threshold level.")
+plt.legend()
 plt.show()
