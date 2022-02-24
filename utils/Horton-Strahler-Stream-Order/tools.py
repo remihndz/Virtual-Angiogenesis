@@ -32,7 +32,7 @@ def ReadTree(ccoFile):
             row = (f.readline()).split()
             if (len(row)==2):
                 Id, parentId = int(row[0]), int(row[1])
-                treeConnectivity.append([Id, parentId])
+                treeConnectivity.append([Id, parentId, []])
             else:
                 Id, parentId, children = int(row[0]), int(row[1]), [int(i) for i in row[2:]]
                 treeConnectivity.append([Id, parentId, children])         
@@ -41,6 +41,7 @@ def ReadTree(ccoFile):
 
 def StrahlerOrder(treeData, treeConnectivity):
 
+    treeConnectivity.sort()
     currentOrder = 0
     vessel = treeConnectivity[0]
     vesselDict = {vessel[0]: [vessel[1], vessel[2], currentOrder]}
@@ -52,7 +53,7 @@ def StrahlerOrder(treeData, treeConnectivity):
             ChildrenList = []
         vesselDict[IdVessel] = [IdParent, ChildrenList, currentOrder]
     prunedTree = copy.deepcopy(vesselDict)
-
+    
     def CurrentLeaves(prunedTree):
         leavesList = []
         for Id, vessel in prunedTree.items():
@@ -60,35 +61,50 @@ def StrahlerOrder(treeData, treeConnectivity):
                 leavesList.append(Id)
         return leavesList
 
-    def UpdateAndPrune(prunedTree, leaves):
+    def UpdateAndPrune(prunedTree, leaves):        
         # Assign an order to the current leaves
         copyTree = copy.deepcopy(prunedTree)
+        increment= False
+
         for leaf in leaves:
-            Children = vesselDict[leaf][1] 
+            Children = treeConnectivity[leaf][-1]
             if len(Children)==2 and copyTree[Children[0]][-1]==currentOrder and copyTree[Children[1]][-1]==currentOrder:
                 copyTree[leaf][-1] = currentOrder+1
+                increment = True
+                
             else:
-                copyTree[leaf][-1] = currentOrder
+                childrenOrders = [0]
+                for child in Children:
+                    childrenOrders.append(copyTree[child][-1])
+                ''' 
+                Two different rules, the max rule is the one from Wikipedia and gives fewer orders.
+                Both give the right results for the test tree.
+                '''
+                copyTree[leaf][-1] = currentOrder #max(1,max(childrenOrders)) 
+
         # Prune
         for leaf in leaves:
             parentId = copyTree[leaf][0]
-            copyTree[parentId][1].remove(leaf)
-        return copyTree
+            if parentId>=0:
+                copyTree[parentId][1].remove(leaf)
+        return copyTree, increment
 
     currentOrder = 1
-    while prunedTree[0][-1]==0:
+    computeForTheRoot = iter([True, False]) # Just used to run one more time once the root is reached
+    while prunedTree[0][-1]==0 or next(computeForTheRoot):
         leafList = CurrentLeaves(prunedTree)
+        prunedTree, increment = UpdateAndPrune(prunedTree, leafList)
+        if increment: currentOrder+=1
+        
         if 0 in leafList:
             break
-        prunedTree = UpdateAndPrune(prunedTree, leafList)
-        currentOrder+=1
-    prunedTree[0][-1] = currentOrder
 
-    # Update vessel dictionary with stream orders
+    # Add stream order to vessel data 
     for vessel in treeData:
         Id = int(vessel[0])
         order = prunedTree[Id][-1]
         treeData[Id].append(order)
+
     return treeData
 
 def TreeStatistics(orderedTree, treeData):
@@ -122,7 +138,7 @@ def PlotTreeStatistics(orderedTree):
     x = np.arange(maxOrder) + 1 
     
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-    ax1.errorbar(x, meanRadius, stdRadius, marker='s')
+    ax1.errorbar(x, meanRadius, stdRadius, marker='s', fillstyle='full')
     ax1.set_yscale('log')
     ax1.set_title('Radius vs. Strahler order')
     ax2.errorbar(x, meanLength, stdLength, marker='s')
