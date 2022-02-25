@@ -135,9 +135,9 @@ def SaveTree(filename, VesselsData, VesselsConn, RootData, RootConn):
         # Vessel information
         unused         = 0.0
         qReservedFrac  = 0.0
-        branchingMode  = 1      # BRANCHING_MODE {NO_BRANCHING, RIGID_PARENT, DEFORMABLE_PARENT, DISTAL_BRANCHING, ONLY_AT_PARENT_HOTSPOTS}
-        vesselFunction = 1      # VESSEL_FUNCTION { DISTRIBUTION, PERFORATOR, TRANSPORT }
-        stage          = 0      # 0 for the 'root', 1 for the segmented vessels
+        branchingMode  = 0      # BRANCHING_MODE {NO_BRANCHING, RIGID_PARENT, DEFORMABLE_PARENT, DISTAL_BRANCHING, ONLY_AT_PARENT_HOTSPOTS}
+        vesselFunction = 0      # VESSEL_FUNCTION { DISTRIBUTION, PERFORATOR, TRANSPORT }
+        stage          = -2     # 0 for the 'root', 1 for the segmented vessels
         
         f.write('*Vessels\n')
         f.write(str(len(VesselsData) + len(RootData)) + '\n')
@@ -147,7 +147,10 @@ def SaveTree(filename, VesselsData, VesselsConn, RootData, RootConn):
             xDist = segment[4:7]
             f.write(f'{vtkSegmentId:d} {xProx[0]} {xProx[1]} {xProx[2]} {xDist[0]} {xDist[1]} {xDist[2]} {unused} {unused} {unused} {qReservedFrac} {branchingMode:d} {Radius} {unused} {unused} {unused} {unused} {vesselFunction} {unused} {unused} {stage:d}\n')
 
+        
         stage+=1
+        vesselFunction = 1
+        branchingMode = 1
         for segment in VesselsData:
             vtkSegmentId = segment[0]
             xProx = segment[1:4]

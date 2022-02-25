@@ -20,6 +20,7 @@
 #include<structures/vascularElements/AbstractVascularElement.h>
 #include<io/VTKObjectTreeNodalWriter.h>
 #include<structures/domain/DomainNVR.h>
+#include<structures/domain/SimpleDomain2D.h>
 #include<structures/domain/NormalDistributionGenerator.h>
 #include<structures/vascularElements/SingleVessel.h>
 #include<structures/tree/AdimSproutingVolumetricCostEstimator.h>
@@ -41,7 +42,7 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
   // Simulation parameters for each stage
   SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
   AbstractCostEstimator *costEstimator = FSprout;
-  GeneratorData *gen_data = new GeneratorData(16000, N_fail, l_lim_fr, perfusion_area_factor,
+  GeneratorData *gen_data = new GeneratorData(160, N_fail, l_lim_fr, perfusion_area_factor,
 					      close_neighborhood_factor, 0.25, Delta_nu, 0, false,
 					      costEstimator);
 					      
@@ -73,13 +74,16 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
   
   SingleVesselCCOOTree *tree = new SingleVesselCCOOTree(root_tree_filename, gen_data, gam, delta, eta);
   tree->setIsInCm(true);
+  tree->setCurrentStage(2);
   int currentStage{tree->getCurrentStage()};
+  cout << "Root tree successfully loaded... ";
   cout << "Current stage is: " << currentStage << endl; 
-  cout << "Saving root tree." << endl;
+  cout << "Saving root tree.\n" << endl;
   // Save the root tree
   VTKObjectTreeNodalWriter *tree_writer = new VTKObjectTreeNodalWriter();
   tree_writer->write(output_filename + "_root.vtp", tree);
   tree->save(output_filename + "_root.cco");
+  staged_domain->setInitialStage(0);
 
   long long int n_term_total = n_term_1 + n_term_2 + tree->getNTerms();
   
@@ -88,6 +92,8 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
 									{gam, gam},
 									{delta, delta},
 									{eta, eta});
+  tree_generator->setDLim(tree_generator->getDLim()/2.);
+  
   cout << "Staged tree generator initialised." << endl;
   
   cout << "Starting tree generation." << endl;
