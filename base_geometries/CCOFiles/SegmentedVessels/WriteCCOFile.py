@@ -16,13 +16,6 @@ connectivity = []               # Container for connectivity
 ## Save each segments data to a container. Each entry is a line in the cco file
 VesselsData = []
 VesselsConn = []
-vtkSegmentId = 0
-unused         = 0.0
-qReservedFrac  = 0.0
-branchingMode  = 2      # BRANCHING_MODE {NO_BRANCHING, RIGID_PARENT, DEFORMABLE_PARENT, DISTAL_BRANCHING, ONLY_AT_PARENT_HOTSPOTS}
-vesselFunction = 1      # VESSEL_FUNCTION { DISTRIBUTION, PERFORATOR, TRANSPORT }
-stage          = 2      
-
 
 # Create a root tree
 n = 6
