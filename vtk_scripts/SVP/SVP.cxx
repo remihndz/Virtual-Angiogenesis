@@ -190,6 +190,7 @@ int CreateVascularAndAvascularRegions(double FOV_in_cm, double FAZ_in_cm)
     CreateSquareWithCircularHole(fileName, FOV_in_cm, FOV_in_cm/3.0);
     std::cout << "Outer Non Vascular Region for stage 2 written in " << fileName << std::endl;
   }
+  return EXIT_SUCCESS;
 }
 
 int main()
