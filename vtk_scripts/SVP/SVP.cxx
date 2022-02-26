@@ -205,7 +205,7 @@ int main()
     }
 
   double FOV_in_cm = 0.3;	// Field of View, typically 6mm or 3mm
-  double FAZ_in_cm = 0.05;	// Foveal Avascular Zone, typically the FAZ has a diameter of 0.5mm in the SVP
+  double FAZ_in_cm = 0.04;	// Foveal Avascular Zone, typically the FAZ has a diameter of 0.5mm in the SVP
   
   CreateVascularAndAvascularRegions(FOV_in_cm, FAZ_in_cm);
 
