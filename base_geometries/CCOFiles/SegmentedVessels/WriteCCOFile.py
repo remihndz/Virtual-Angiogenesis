@@ -4,7 +4,7 @@ import os
 from utils import CreateRootTree, LinkToRootTree, SaveTree
 
 FOV    = 0.3                    # Size of the field of view. Shifts the FAZ to (x,y,z)=(0,0,0)
-Radius = 0.004                  # Fixed radius for all vessels
+Radius = 0.005                  # Fixed radius for all vessels
                                 # TODO: add radius for each vessel
 NVessels = 0                    # Number of vessels
 NSegments = 0                   # Total number of segments in the segmented vessels
@@ -47,5 +47,5 @@ for filename in glob.iglob('./Vessel*'):
             xProx = xDist
 
 LinkToRootTree(VesselsData, VesselsConn, RootData, RootConn)
-SaveTree('./10VesselsRootTree.cco', VesselsData, VesselsConn, RootData, RootConn)
+SaveTree('../10VesselsRootTree.cco', VesselsData, VesselsConn, RootData, RootConn)
 
