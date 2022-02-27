@@ -10,7 +10,7 @@ do
     maxThreshold="255"
     while [ $threshold -lt $maxThreshold ]
     do
-	python3 VesselDensity.py $filename $threshold >> $outputfile
+	python3 OCTAImageVesselDensity.py $filename $threshold >> $outputfile
 	threshold=$((threshold+5))
     done
 done
@@ -21,7 +21,7 @@ do
     maxThreshold="255"
     while [ $threshold -lt $maxThreshold ]
     do
-	python3 VesselDensity.py $filename $threshold >> $outputfile
+	python3 OCTAImageVesselDensity.py $filename $threshold >> $outputfile
 	threshold=$((threshold+5))
     done
 done
@@ -32,10 +32,10 @@ outputfile="SensitivityToThreshold_segmentedImages.dat"
 rm $outputfile
 for filename in /mnt/c/Users/rhernand/Desktop/OCTADataSets/ROSE-dataset/data/ROSE-1/SVC/test/gt/*.tif;
 do    
-    python3 VesselDensity.py $filename $threshold >> $outputfile
+    python3 OCTAImageVesselDensity.py $filename $threshold >> $outputfile
 done
 
 for filename in /mnt/c/Users/rhernand/Desktop/OCTADataSets/ROSE-dataset/data/ROSE-1/SVC/train/gt/*.tif;
 do    
-    python3 VesselDensity.py $filename $threshold >> $outputfile
+    python3 OCTAImageVesselDensity.py $filename $threshold >> $outputfile
 done
