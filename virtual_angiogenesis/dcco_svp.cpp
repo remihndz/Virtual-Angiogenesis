@@ -82,7 +82,7 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
   // Save the root tree
   VTKObjectTreeNodalWriter *tree_writer = new VTKObjectTreeNodalWriter();
   tree_writer->write(output_filename + "_root.vtp", tree);
-  tree->save(output_filename + "_root.cco");
+  tree->save(output_filename + ".cco.root");
   staged_domain->setInitialStage(0);
 
   long long int n_term_total = n_term_1 + n_term_2 + tree->getNTerms();

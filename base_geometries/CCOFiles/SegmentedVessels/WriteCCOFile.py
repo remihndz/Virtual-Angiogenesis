@@ -47,5 +47,5 @@ for filename in glob.iglob('./Vessel*'):
             xProx = xDist
 
 LinkToRootTree(VesselsData, VesselsConn, RootData, RootConn)
-SaveTree('RootTreeFromImage.cco', VesselsData, VesselsConn, RootData, RootConn)
+SaveTree('./10VesselsRootTree.cco', VesselsData, VesselsConn, RootData, RootConn)
 
