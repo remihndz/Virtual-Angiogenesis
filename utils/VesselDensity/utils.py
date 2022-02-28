@@ -60,7 +60,7 @@ def VesselDensity(vessels, domainAreaInCm=0.09, upToStage=100):
             vesselDensity += r*l*2 # Surface of the vessel on a 2d projection
             vesselCount +=1
     
-    return vesselDensity*100.0, vesselCount
+    return vesselDensity/domainAreaInCm*100.0, vesselCount
 
 def StatisticsMultipleTrees(ccoFiles, domainAreaInCm=0.09, upToStage=100):
     '''
