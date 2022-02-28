@@ -57,10 +57,10 @@ def VesselDensity(vessels, domainAreaInCm=0.09, upToStage=100):
     for Id in vessels:
         r, l, stage = vessels[Id][0], vessels[Id][1], vessels[Id][-1]
         if stage < upToStage and stage>=-1:
-            vesselDensity += r*l*2 # Surface of the vessel on a 2d projection
+            vesselDensity += 2.00*r*l # Surface of the vessel on a 2d projection
             vesselCount +=1
-    
-    return vesselDensity/domainAreaInCm*100.0, vesselCount
+    vesselDensity/=domainAreaInCm
+    return vesselDensity*100.0, vesselCount
 
 def StatisticsMultipleTrees(ccoFiles, domainAreaInCm=0.09, upToStage=100):
     '''
