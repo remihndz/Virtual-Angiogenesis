@@ -123,7 +123,7 @@ def SaveTree(filename, VesselsData, VesselsConn, RootData, RootConn):
     for segment in VesselsData:
         if len(segment) == 2:
             nTerms+=1
-    refPressure = 9.80
+    refPressure = 0.0
     pointCounter = 0
     rootRadius   = Radius
     variationTolerance = 1e-05

@@ -62,20 +62,88 @@ def VesselDensity(vessels, domainAreaInCm=0.09, upToStage=100):
     vesselDensity/=domainAreaInCm
     return vesselDensity*100.0, vesselCount
 
+def VesselPerimeterIndex(vessels, domainAreaInCm=0.09, upToStage=100):
+    '''
+    domainAreaInCm is the surface of the perfusion domain, i.e. the square 
+    including the FAZ.
+    upToStage is used to compute vessel density of the tree
+    starting up to certain stage (by default includes all stages).
+    Ex: VesselPerimeterIndex(vessels, domainAreaInCm, 2) will return the 
+    vessel density of the tree, excluding vessels that are grown 
+    at stage 3 or later.
+    '''
+    
+    VPI = 0.0
+    vesselCount   = 0
+    for Id in vessels:
+        r, l, stage = vessels[Id][0], vessels[Id][1], vessels[Id][-1]
+        if stage < upToStage and stage>=-1:
+            VPI += 2.00*l # Perimeter of the vessel segment on a 2D projection
+            vesselCount +=1
+    VPI/=domainAreaInCm
+    VPI/=1e4                    # Convert from cm-1 to micron-1
+    return VPI, vesselCount
+
+def VesselDiameterIndex(vessels, domainAreaInCm=0.09, upToStage=100):
+    '''
+    domainAreaInCm is the surface of the perfusion domain, i.e. the square 
+    including the FAZ.
+    upToStage is used to compute vessel density of the tree
+    starting up to certain stage (by default includes all stages).
+    Ex: VesselDiameterIndex(vessels, domainAreaInCm, 2) will return the 
+    vessel density of the tree, excluding vessels that are grown 
+    at stage 3 or later.
+    '''
+
+    totalLength, totalArea = 0.0, 0.0
+    vesselCount   = 0
+    for Id in vessels:
+        r, l, stage = vessels[Id][0], vessels[Id][1], vessels[Id][-1]
+        if stage < upToStage and stage>=-1:
+            totalLength += l
+            totalArea   += l*2*r
+            vesselCount +=1
+    VDI = totalArea/totalLength*1e4 # Convert from cm to micron
+    return VDI, vesselCount
+
+def VesselComplexityIndex(vessels, domainAreaInCm=0.09, upToStage=100):
+    '''
+    domainAreaInCm is the surface of the perfusion domain, i.e. the square 
+    including the FAZ.
+    upToStage is used to compute vessel density of the tree
+    starting up to certain stage (by default includes all stages).
+    Ex: VesselComplexityIndex(vessels, domainAreaInCm, 2) will return the 
+    vessel density of the tree, excluding vessels that are grown 
+    at stage 3 or later.
+    '''
+
+    totalPerimeter, totalArea = 0.0, 0.0
+    vesselCount   = 0
+    for Id in vessels:
+        r, l, stage = vessels[Id][0], vessels[Id][1], vessels[Id][-1]
+        if stage < upToStage and stage>=-1:
+            totalPerimeter += l*2
+            totalArea      += l*2*r
+            vesselCount    +=1
+    VCI = (totalPerimeter**2)/(4*np.pi*totalArea)
+    return VCI, vesselCount
+
 def StatisticsMultipleTrees(ccoFiles, domainAreaInCm=0.09, upToStage=100):
     '''
     Compute vessel density mean and std 
     from all the trees in ccoFiles.
     '''
 
-    VD = []
+    VAD, VPI, VDI, VCI = [], [], [], []
     for ccoFile in ccoFiles:
         vessels, _ = ReadCCO(ccoFile)
-        density, vesselCount = VesselDensity(vessels, domainAreaInCm, upToStage)
-        VD.append(density)
+        vesselDensity, vesselCount = VesselDensity(vessels, domainAreaInCm, upToStage)
+        VAD.append(vesselDensity)            
+        VPI.append(VesselPerimeterIndex(vessels, domainAreaInCm, upToStage)[0])
+        VDI.append(VesselDiameterIndex(vessels, domainAreaInCm, upToStage)[0])
+        VCI.append(VesselComplexityIndex(vessels, domainAreaInCm, upToStage)[0])
         print(vesselCount, "vessels included in the count.")
-    
-    VD = np.array(VD)
-    return VD.mean(), VD.std()
+
+    return np.array(VAD), np.array(VPI), np.array(VDI), np.array(VCI)
         
         
