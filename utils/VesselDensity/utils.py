@@ -52,15 +52,15 @@ def VesselDensity(vessels, domainAreaInCm=0.09, upToStage=100):
     at stage 3 or later.
     '''
 
-    vesselDensity = 0.0
+    VAD = 0.0
     vesselCount   = 0
     for Id in vessels:
         r, l, stage = vessels[Id][0], vessels[Id][1], vessels[Id][-1]
         if stage < upToStage and stage>=-1:
-            vesselDensity += 2.00*r*l # Surface of the vessel on a 2d projection
+            VAD += 2.00*r*l # Surface of the vessel on a 2d projection
             vesselCount +=1
-    vesselDensity/=domainAreaInCm
-    return vesselDensity*100.0, vesselCount
+    VAD/=domainAreaInCm
+    return VAD, vesselCount
 
 def VesselPerimeterIndex(vessels, domainAreaInCm=0.09, upToStage=100):
     '''
