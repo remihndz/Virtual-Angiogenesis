@@ -9,8 +9,9 @@ def FractalDimension(img, threshold=15.0):
 
     # Only for grayscale images
     if len(img.shape)>2:
-    R, G, B = img[:,:,0], img[:,:,1], img[:,:,2]
-    imgGray = 0.2989 * R + 0.5870 * G + 0.1140 * B
+        R, G, B = img[:,:,0], img[:,:,1], img[:,:,2]
+        imgGray = 0.2989 * R + 0.5870 * G + 0.1140 * B
+        img = imgGray
         
 
     # From https://github.com/rougier/numpy-100 (#87)
