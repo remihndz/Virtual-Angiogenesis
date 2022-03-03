@@ -24,7 +24,7 @@ def ReadTree(ccoFile):
             row = (f.readline()).split() # Split all columns in a list
             Id, xProx, xDist, r, q, stage = int(row[0]), row[1:4], row[4:7], float(row[12]), float(row[10]), int(row[-1])
             l = sum([(float(a)-float(b))**2 for a,b in zip(xProx, xDist)])**.5
-            treeData.append([Id, r, l, q, stage])
+            treeData.append([Id, r*1e4, l*1e4, q, stage]) # Convert to mm
         
         row = f.readline()
         print('Reading', f.readline().strip())
@@ -81,7 +81,7 @@ def StrahlerOrder(treeData, treeConnectivity):
                 Two different rules, the max rule is the one from Wikipedia and gives fewer orders.
                 Both give the right results for the test tree.
                 '''
-                copyTree[leaf][-1] = max(1,max(childrenOrders)) # currentOrder
+                copyTree[leaf][-1] = currentOrder # max(1,max(childrenOrders)) 
 
         # Prune
         for leaf in leaves:
@@ -100,22 +100,19 @@ def StrahlerOrder(treeData, treeConnectivity):
         if 0 in leafList:
             break
 
-    # Add stream order to vessel data. Get rid of the root vessels that are outside the domain
-    finalTree = []
+    # Add stream order to vessel data
+    treeDataNoRoot = []
+    count = 0
     for vessel in treeData:
-        stage = vessel[-1]
-        if stage >= -1:
-            Id = int(vessel[0])
-            order = prunedTree[Id][-1]
-            treeData[Id].append(order)
-            finalTree.append(treeData[Id])
+        Id = int(vessel[0])
+        order = prunedTree[Id][-1]
+        treeData[Id].append(order)
 
-    # Shift the indexes to compensate for the vessels that were deleted
-    nVesselsDeleted = len(treeData)-len(finalTree)
-    for i in range(len(finalTree)):
-        finalTree[i][0] -= nVesselsDeleted
-        
-    return finalTree
+        if treeData[Id][-2]>=0:
+            Id, radius, length, flow, stage, order = treeData[Id]
+            treeDataNoRoot.append([count, radius, length, flow, order])
+            count+=1
+    return treeDataNoRoot
 
 def TreeStatistics(orderedTree, treeData):
     return #stats
@@ -129,14 +126,16 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
     dataLength = np.zeros((maxOrder, len(orderedTree)))
     dataVolume   = np.zeros((maxOrder, len(orderedTree)))
     dataAspectRatio   = np.zeros((maxOrder, len(orderedTree)))
+    orderDistribution = np.zeros((maxOrder,))
     
     for Id, radius, length, flow, stage, order in orderedTree:
         r,l = radius*1e4, length*1e4 # Convert to microns
         i,j = int(order)-1, int(Id)
-        dataRadius[i, j] = r
-        dataLength[i, j] = l
-        dataVolume[i, j] = r*r*l*np.pi
-        dataAspectRatio[i, j] = l/r
+        dataRadius[i, j] = radius
+        dataLength[i, j] = length
+        dataVolume[i, j] = radius*radius*length*np.pi
+        dataAspectRatio[i, j] = length/radius
+        orderDistribution[i] += 1
         
     meanRadius = np.mean(dataRadius, axis = 1, where=dataRadius>0)
     stdRadius  = np.std(dataRadius, axis = 1, where=dataRadius>0)
@@ -153,10 +152,9 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
     fig.set_figheight(7.2)
     fig.set_figwidth(8.8)
 
-    scale = 'linear' # 'log'
-    ax1.errorbar(x, meanRadius, stdRadius, marker='s', fillstyle='full')
-    ax1.set_yscale(scale)
-    ax1.set_title('Radius vs. Strahler order')
+    ax1.errorbar(x, 2*meanRadius, stdRadius*2, marker='s', fillstyle='full')
+    ax1.set_yscale('log')
+    ax1.set_title('Diameter vs. Strahler order')
     ax2.errorbar(x, meanLength, stdLength, marker='s')
     ax2.set_yscale(scale)
     ax2.set_title('Length vs. Strahler order')
@@ -186,12 +184,47 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
 
 
     if outputImageFile:
-        np.savetxt(outputImageFile[:-4] + 'vessels.dat', data)
-        print('\nWriting outputs (image+data) in', outputImageFile[:-4] + '.png/.dat')        
-        data = np.concatenate((x.reshape((-1,1)), meanRadius.reshape((-1,1)), stdRadius.reshape((-1,1)), meanLength.reshape((-1,1)), stdLength.reshape((-1,1)), meanVolume.reshape((-1,1)), stdVolume.reshape((-1,1)), meanAspectRatio.reshape((-1,1)), stdAspectRatio.reshape((-1,1))), axis=1)
-        #np.savetxt(outputImageFile[:-4] + '.dat', data)
-        #plt.savefig(outputImageFile)
+        print('\nWriting outputs (image+data) in', outputImageFile[:-4] + '.png/.dat')
+        data = np.vstack((x, meanRadius, stdRadius, meanLength, stdLength, meanVolume, stdVolume, meanAspectRatio, stdAspectRatio, orderDistribution))
+        np.savetxt(outputImageFile[:-4] + '.dat', data)
+        plt.savefig(outputImageFile)
     plt.show()
     
     return
 
+def PlotLineAndBars(x, yline, ybars, labels=[r'Radius ($\mu m$)', 'Number of vessels per stream order'], fontsize=14, logplot=False):
+
+    plt.style.use('seaborn')
+    width = 345
+
+    tex_fonts = {
+            # Use LaTeX to write all text
+            "text.usetex": True,
+            "font.family": "serif",
+            # Use 10pt font in plots, to match 10pt font in document
+            "axes.labelsize": fontsize,
+            "font.size": fontsize,
+            # Make the legend/label fonts a little smaller
+            "legend.fontsize": fontsize-2,
+            "xtick.labelsize": fontsize-2,
+            "ytick.labelsize": fontsize-2
+        }
+
+    plt.rcParams.update(tex_fonts)
+    
+    plt.figure()
+    plt.rcParams['font.size'] = fontsize
+    plt.xlabel('Horton-Srahler stream order')
+    # plt.ylim(yline[0,:].min()*0.75, yline[0,:].max()*1.25)
+    # plt.ylim(min()*0.75, yline[0,:].max()*1.25)
+    plt.ylabel(labels[0])
+    if logplot:
+        plt.yscale('log')
+    plt.errorbar(x, yline[0,:], yline[1,:], capsize=4, color='black')
+
+    ax2 = plt.twinx()
+    ax2.set_ylim(ybars.min()*0.75, ybars.max()*1.25)
+    ax2.set_ylabel(labels[1])
+    ax2.bar(x, ybars, alpha=0.3, color='gray')
+    plt.show()
+    return

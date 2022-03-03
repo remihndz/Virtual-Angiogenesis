@@ -113,7 +113,7 @@ def LinkToRootTree(VesselsData, VesselsConn, RootData, RootConn):
     return    
 
 def SaveTree(filename, VesselsData, VesselsConn, RootData, RootConn):
-    Radius = 0.04
+    Radius = 0.004
     # global tree information
     xPerf = RootData[0][1:4]
     qProx = 10.00
@@ -123,7 +123,7 @@ def SaveTree(filename, VesselsData, VesselsConn, RootData, RootConn):
     for segment in VesselsData:
         if len(segment) == 2:
             nTerms+=1
-    refPressure = 9.80
+    refPressure = 0.0
     pointCounter = 0
     rootRadius   = Radius
     variationTolerance = 1e-05
