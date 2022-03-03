@@ -107,7 +107,7 @@ def StrahlerOrder(treeData, treeConnectivity):
         order = prunedTree[Id][-1]
         treeData[Id].append(order)
 
-        if treeData[Id][-2]>=-2:
+        if treeData[Id][-2]>=0:
             Id, radius, length, flow, stage, order = treeData[Id]
             treeDataNoRoot.append([count, radius, length, flow, order])
             count+=1
@@ -194,7 +194,8 @@ def PlotLineAndBars(x, yline, ybars, labels=[r'Radius ($\mu m$)', 'Number of ves
     plt.figure()
     plt.rcParams['font.size'] = fontsize
     plt.xlabel('Horton-Srahler stream order')
-    plt.ylim(yline[0,:].min()*0.75, yline[0,:].max()*1.25)
+    # plt.ylim(yline[0,:].min()*0.75, yline[0,:].max()*1.25)
+    # plt.ylim(min()*0.75, yline[0,:].max()*1.25)
     plt.ylabel(labels[0])
     if logplot:
         plt.yscale('log')
