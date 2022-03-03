@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib.pyplot import imread
 import matplotlib.pyplot as plt
  
-def FractalDimension(img, threshold=15.0):
+def FractalDimension(img, threshold=0.0):
 
     # Only for grayscale images
     if len(img.shape)>2:
@@ -66,6 +66,6 @@ img = imread(str(sys.argv[1]))
 if len(sys.argv)==3:
     threshold = float(sys.argv[2])
 else:
-    threshold = 20
+    threshold = 0
 
 FractalDimension(img, threshold=threshold)
