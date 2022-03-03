@@ -21,9 +21,9 @@ def ReadTree(ccoFile):
         treeData = []
         for i in range(nVessels):
             row = (f.readline()).split() # Split all columns in a list
-            Id, xProx, xDist, r, q = float(row[0]), row[1:4], row[4:7], float(row[12]), float(row[10])
+            Id, xProx, xDist, r, q, stage = int(row[0]), row[1:4], row[4:7], float(row[12]), float(row[10]), int(row[-1])
             l = sum([(float(a)-float(b))**2 for a,b in zip(xProx, xDist)])**.5
-            treeData.append([Id, r*1e4, l*1e4, q]) # Convert to mm
+            treeData.append([Id, r*1e4, l*1e4, q, stage]) # Convert to mm
         
         row = f.readline()
         print('Reading', f.readline().strip())
@@ -80,7 +80,7 @@ def StrahlerOrder(treeData, treeConnectivity):
                 Two different rules, the max rule is the one from Wikipedia and gives fewer orders.
                 Both give the right results for the test tree.
                 '''
-                copyTree[leaf][-1] = currentOrder #max(1,max(childrenOrders)) 
+                copyTree[leaf][-1] = currentOrder # max(1,max(childrenOrders)) 
 
         # Prune
         for leaf in leaves:
@@ -99,13 +99,19 @@ def StrahlerOrder(treeData, treeConnectivity):
         if 0 in leafList:
             break
 
-    # Add stream order to vessel data 
+    # Add stream order to vessel data
+    treeDataNoRoot = []
+    count = 0
     for vessel in treeData:
         Id = int(vessel[0])
         order = prunedTree[Id][-1]
         treeData[Id].append(order)
 
-    return treeData
+        if treeData[Id][-2]>=-2:
+            Id, radius, length, flow, stage, order = treeData[Id]
+            treeDataNoRoot.append([count, radius, length, flow, order])
+            count+=1
+    return treeDataNoRoot
 
 def TreeStatistics(orderedTree, treeData):
     return #stats
@@ -143,9 +149,9 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
     fig.set_figheight(7.2)
     fig.set_figwidth(8.8)
 
-    ax1.errorbar(x, meanRadius, stdRadius, marker='s', fillstyle='full')
+    ax1.errorbar(x, 2*meanRadius, stdRadius*2, marker='s', fillstyle='full')
     ax1.set_yscale('log')
-    ax1.set_title('Radius vs. Strahler order')
+    ax1.set_title('Diameter vs. Strahler order')
     ax2.errorbar(x, meanLength, stdLength, marker='s')
     ax2.set_yscale('log')
     ax2.set_title('Length vs. Strahler order')
