@@ -23,7 +23,7 @@ def ReadTree(ccoFile):
             row = (f.readline()).split() # Split all columns in a list
             Id, xProx, xDist, r, q = float(row[0]), row[1:4], row[4:7], float(row[12]), float(row[10])
             l = sum([(float(a)-float(b))**2 for a,b in zip(xProx, xDist)])**.5
-            treeData.append([Id, r, l, q])
+            treeData.append([Id, r*1e4, l*1e4, q]) # Convert to mm
         
         row = f.readline()
         print('Reading', f.readline().strip())
@@ -118,6 +118,7 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
     dataLength = np.zeros((maxOrder, len(orderedTree)))
     dataVolume   = np.zeros((maxOrder, len(orderedTree)))
     dataAspectRatio   = np.zeros((maxOrder, len(orderedTree)))
+    orderDistribution = np.zeros((maxOrder,))
     
     for Id, radius, length, flow, order in orderedTree:
         i,j = int(order)-1, int(Id)
@@ -125,6 +126,7 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
         dataLength[i, j] = length
         dataVolume[i, j] = radius*radius*length*np.pi
         dataAspectRatio[i, j] = length/radius
+        orderDistribution[i] += 1
         
     meanRadius = np.mean(dataRadius, axis = 1, where=dataRadius>0)
     stdRadius  = np.std(dataRadius, axis = 1, where=dataRadius>0)
@@ -156,10 +158,45 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
 
     if outputImageFile:
         print('\nWriting outputs (image+data) in', outputImageFile[:-4] + '.png/.dat')
-        # data = np.concatenate((x, meanRadius.transpose(), stdRadius.transpose(), meanLength.transpose(), stdLength.transpose(), meanVolume.transpose(), stdVolume.transpose(), meanAspectRatio.transpose(), stdAspectRatio.transpose()), axis=1)
-        # np.savetxt(outputImageFile[:-4] + '.dat', data)
+        data = np.vstack((x, meanRadius, stdRadius, meanLength, stdLength, meanVolume, stdVolume, meanAspectRatio, stdAspectRatio, orderDistribution))
+        np.savetxt(outputImageFile[:-4] + '.dat', data)
         plt.savefig(outputImageFile)
     plt.show()
     
     return
 
+def PlotLineAndBars(x, yline, ybars, labels=[r'Radius ($\mu m$)', 'Number of vessels per stream order'], fontsize=14, logplot=False):
+
+    plt.style.use('seaborn')
+    width = 345
+
+    tex_fonts = {
+            # Use LaTeX to write all text
+            "text.usetex": True,
+            "font.family": "serif",
+            # Use 10pt font in plots, to match 10pt font in document
+            "axes.labelsize": fontsize,
+            "font.size": fontsize,
+            # Make the legend/label fonts a little smaller
+            "legend.fontsize": fontsize-2,
+            "xtick.labelsize": fontsize-2,
+            "ytick.labelsize": fontsize-2
+        }
+
+    plt.rcParams.update(tex_fonts)
+    
+    plt.figure()
+    plt.rcParams['font.size'] = fontsize
+    plt.xlabel('Horton-Srahler stream order')
+    plt.ylim(yline[0,:].min()*0.75, yline[0,:].max()*1.25)
+    plt.ylabel(labels[0])
+    if logplot:
+        plt.yscale('log')
+    plt.errorbar(x, yline[0,:], yline[1,:], capsize=4, color='black')
+
+    ax2 = plt.twinx()
+    ax2.set_ylim(ybars.min()*0.75, ybars.max()*1.25)
+    ax2.set_ylabel(labels[1])
+    ax2.bar(x, ybars, alpha=0.3, color='gray')
+    plt.show()
+    return
