@@ -45,7 +45,12 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
   GeneratorData *gen_data = new GeneratorData(160, N_fail, l_lim_fr, perfusion_area_factor,
 					      close_neighborhood_factor, 0.25, Delta_nu, 0, false,
 					      costEstimator);
-					      
+
+  GeneratorData *gen_data_stage2 = new GeneratorData(160, N_fail, l_lim_fr, perfusion_area_factor,
+					      1.0, 0.25, Delta_nu, 0, false,
+					      costEstimator);
+    
+  
 
   // Domain definition for stage 1
   DomainNVR *domain_1 = new DomainNVR(Hull, NVR_1, n_draw, seed, gen_data);
@@ -54,7 +59,7 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
   cout << "Domain 1 generated." << endl;
 
   // Domain definition for stage 2
-  DomainNVR *domain_2 = new DomainNVR(Hull, NVR_2, n_draw, seed, gen_data);
+  DomainNVR *domain_2 = new DomainNVR(Hull, NVR_2, n_draw, seed, gen_data_stage2);
   domain_2->setIsConvexDomain(true);
   domain_2->setMinBifurcationAngle(theta_min);
   cout << "Domain 2 generated." << endl;
