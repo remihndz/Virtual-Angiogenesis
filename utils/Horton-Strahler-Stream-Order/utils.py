@@ -110,7 +110,7 @@ def StrahlerOrder(treeData, treeConnectivity):
 
         if treeData[Id][-2]>=-1:
             Id, radius, length, flow, stage, order = treeData[Id]
-            treeDataNoRoot.append([count, radius, length, flow, order])
+            treeDataNoRoot.append([count, radius, length, flow, stage, order])
             count+=1
     return treeDataNoRoot
 
@@ -151,7 +151,7 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col')
     fig.set_figheight(7.2)
     fig.set_figwidth(8.8)
-
+    scale='linear'
     ax1.errorbar(x, 2*meanRadius, stdRadius*2, marker='s', fillstyle='full')
     ax1.set_yscale('log')
     ax1.set_title('Diameter vs. Strahler order')
