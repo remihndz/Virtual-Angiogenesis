@@ -1,7 +1,11 @@
-import sys
+import sys, glob
+from sys import platform as _platform
 import vtkmodules.all as vtk
 
-file_names = sys.argv[1:]
+if _platform=='linux':
+    file_names = sys.argv[1:]
+else:
+    file_names = glob.glob(sys.argv[1])
 
 for file_name in file_names:
     file_name_base = file_name[:-4]

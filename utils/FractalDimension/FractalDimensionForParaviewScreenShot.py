@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib.pyplot import imread
 import matplotlib.pyplot as plt
  
-def FractalDimension(img, threshold=0.0):
+def FractalDimension(img, threshold=0.0, plot=False):
 
     # Only for grayscale images
     if len(img.shape)>2:
@@ -25,10 +25,6 @@ def FractalDimension(img, threshold=0.0):
     
     # Transform img into a binary array
     img = (img > threshold)
-    plt.figure(1)
-    plt.imshow(img, cmap=plt.cm.gray_r)
-    plt.title(f'Binarized image with threshold {threshold:1.2f}')
-    plt.legend()
     
     # Minimal dimension of image
     p = min(img.shape)
@@ -53,19 +49,31 @@ def FractalDimension(img, threshold=0.0):
     
     print("Minkowski–Bouligand dimension (computed): ", -D)
 
-    plt.figure(2)
-    plt.plot(np.log(sizes), np.log(counts), '-s', label='Box count')
-    plt.plot(np.log(sizes), np.log(counts[-1]) + D * (np.log(sizes)-np.log(sizes[-1])), label='Linear fit')
-    plt.title(f'Minkowski-Bouligand dimension: {-D:1.2f}')
-    plt.legend()
-    plt.show()
-    return
+    if plot:
+        plt.figure(1)
+        plt.imshow(img, cmap=plt.cm.gray_r)
+        plt.title(f'Binarized image with threshold {threshold:1.2f}')
+        plt.legend()
+
+        plt.figure(2)
+        plt.plot(np.log(sizes), np.log(counts), '-s', label='Box count')
+        plt.plot(np.log(sizes), np.log(counts[-1]) + D * (np.log(sizes)-np.log(sizes[-1])), label='Linear fit')
+        plt.title(f'Minkowski-Bouligand dimension: {-D:1.2f}')
+        plt.legend()
+        plt.show()
+
+    return -D
 
 
-img = imread(str(sys.argv[1]))
-if len(sys.argv)==3:
-    threshold = float(sys.argv[2])
-else:
-    threshold = 0
+threshold = 0
 
-FractalDimension(img, threshold=threshold)
+D = []
+for imgFile in sys.argv[1:]:
+    img = imread(imgFile)
+    D.append(FractalDimension(img, threshold=threshold))
+
+D = np.array(D)
+print('Mean and standard deviation:', D.mean(), D.std())
+np.savetxt('FractalDimensionOfGeneratedTrees.dat', D)
+
+
