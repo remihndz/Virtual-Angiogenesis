@@ -11,7 +11,7 @@ for ccoFile in sys.argv[1:]:
     treesData.extend(orderedData)
 
 # Parameters of the plot
-fontsize = 14
+fontsize = 16
 # plt.style.use('classic')
 width = 345
 
@@ -82,35 +82,44 @@ x = np.arange(1, maxOrder+1)
 Takahashi = np.loadtxt('img/Takahashi.dat')[3:,:] # By column: order, diameter, length
 Takahashi[:,0] = np.flip(Takahashi[:,0])-Takahashi[:,0].min()+1
 An = np.loadtxt('img/An2020MeanDiameter.dat')   # By column: order, mean diameter
+# YuLength = np.loadtxt('img/Yu2010Length.dat')   # By column: order, mean length, std
+# YuDiameter = np.loadtxt('img/Yu2010Diameter.dat') # By column: order, mean diameter (width), std
+TessDiameter = np.loadtxt('img/Tess2014.dat')
 
 plt.figure(1)
-plt.xlabel('Horton-Strahle stream order')
+plt.xlabel('Horton-Strahler stream order')
 plt.ylabel(r'Diameter ($\mu m$)')
 plt.errorbar(x, 2*meanRadius, 2*stdRadius, capsize=4, color='black', label=r'This work, mean$\pm$std', marker='s')
 plt.plot(Takahashi[:,0], Takahashi[:,1], label="Takahashi's ideal network", linestyle='-.', color='black')
-plt.plot(An[:,0]+6, An[:,1], label='An 2020, mean value', linestyle='--', marker='^', color='black')
+plt.plot(x[-int(An[:,0].max()):], np.flip(An[:,1]), label='An 2020, mean value', linestyle='--', marker='^', color='black')
+plt.plot(x[-int(TessDiameter[:,0].max()):], np.flip(TessDiameter[:,1]), label='Tess 2014, rat retina', linestyle='dotted', color='black')
+# plt.errorbar(YuDiameter[:,0]+6, YuDiameter[:,1], YuDiameter[:,2], label=r'Yu 2020, mean$\pm$std', linestyle='dotted', marker='v', color='black', capsize=4)
+
 plt.legend()
 ax2 = plt.twinx()
 ax2.set_ylabel('Average number of vessels per stream order')
 ax2.bar(x, orderDistribution, alpha=0.3, color='gray')
 
-plt.figure(2)
-plt.xlabel('Horton-Strahle stream order')
-plt.ylabel(r'Length ($\mu m$)')
-plt.errorbar(x, meanLength, stdLength, capsize=4, color='black')
-plt.plot(Takahashi[:,0], Takahashi[:,2], label="Takahashi's ideal network", linestyle='-.', color='black')
-plt.legend()
-ax2 = plt.twinx()
-ax2.set_ylabel('Average number of vessels per stream order')
-ax2.bar(x, orderDistribution, alpha=0.3, color='gray')
+# plt.figure(2)
+# plt.xlabel('Horton-Strahler stream order')
+# plt.ylabel(r'Length ($\mu m$)')
+# plt.errorbar(x, meanLength, stdLength, capsize=4, color='black')
+# plt.plot(Takahashi[:,0], Takahashi[:,2], label="Takahashi's ideal network", linestyle='-.', color='black')
 
-plt.figure(3)
-plt.xlabel('Horton-Strahle stream order')
-plt.ylabel(r'Aspect ratio')
-plt.errorbar(x, meanAspectRatio, stdAspectRatio, capsize=4, color='black', label=r'This work, mean$\pm$std')
-plt.legend()
-ax2 = plt.twinx()
-ax2.set_ylabel('Average number of vessels per stream order')
-ax2.bar(x, orderDistribution, alpha=0.3, color='gray')
+# # plt.errorbar(YuDiameter[:,0]+6, YuLength[:,1], YuLength[:,2], label=r'Yu 2020, mean$\pm$std', marker='v', linestyle='dotted', color='black', capsize=4)
+
+# plt.legend()
+# ax2 = plt.twinx()
+# ax2.set_ylabel('Average number of vessels per stream order')
+# ax2.bar(x, orderDistribution, alpha=0.3, color='gray')
+
+# plt.figure(3)
+# plt.xlabel('Horton-Strahler stream order')
+# plt.ylabel(r'Aspect ratio')
+# plt.errorbar(x, meanAspectRatio, stdAspectRatio, capsize=4, color='black', label=r'This work, mean$\pm$std')
+# plt.legend()
+# ax2 = plt.twinx()
+# ax2.set_ylabel('Average number of vessels per stream order')
+# ax2.bar(x, orderDistribution, alpha=0.3, color='gray')
 
 plt.show()
