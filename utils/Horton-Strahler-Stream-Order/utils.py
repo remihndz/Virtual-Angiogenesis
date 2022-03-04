@@ -108,7 +108,7 @@ def StrahlerOrder(treeData, treeConnectivity):
         order = prunedTree[Id][-1]
         treeData[Id].append(order)
 
-        if treeData[Id][-2]>=0:
+        if treeData[Id][-2]>=-1:
             Id, radius, length, flow, stage, order = treeData[Id]
             treeDataNoRoot.append([count, radius, length, flow, order])
             count+=1
