@@ -84,7 +84,7 @@ Takahashi[:,0] = np.flip(Takahashi[:,0])-Takahashi[:,0].min()+1
 An = np.loadtxt('img/An2020MeanDiameter.dat')   # By column: order, mean diameter
 # YuLength = np.loadtxt('img/Yu2010Length.dat')   # By column: order, mean length, std
 # YuDiameter = np.loadtxt('img/Yu2010Diameter.dat') # By column: order, mean diameter (width), std
-TessDiameter = np.loadtxt('img/Tess2014.dat')
+KornfieldDiameter = np.loadtxt('img/Kornfield2014.dat')
 
 plt.figure(1)
 plt.xlabel('Horton-Strahler stream order')
@@ -92,7 +92,7 @@ plt.ylabel(r'Diameter ($\mu m$)')
 plt.errorbar(x, 2*meanRadius, 2*stdRadius, capsize=4, color='black', label=r'This work, mean$\pm$std', marker='s')
 plt.plot(Takahashi[:,0], Takahashi[:,1], label="Takahashi's ideal network", linestyle='-.', color='black')
 plt.plot(x[-int(An[:,0].max()):], np.flip(An[:,1]), label='An 2020, mean value', linestyle='--', marker='^', color='black')
-plt.plot(x[-int(TessDiameter[:,0].max()):], np.flip(TessDiameter[:,1]), label='Tess 2014, rat retina', linestyle='dotted', color='black')
+plt.plot(x[-int(KornfieldDiameter[:,0].max()):], np.flip(KornfieldDiameter[:,1]), label='Kornfield 2014, rat retina', linestyle='dotted', color='black')
 # plt.errorbar(YuDiameter[:,0]+6, YuDiameter[:,1], YuDiameter[:,2], label=r'Yu 2020, mean$\pm$std', linestyle='dotted', marker='v', color='black', capsize=4)
 
 plt.legend()
