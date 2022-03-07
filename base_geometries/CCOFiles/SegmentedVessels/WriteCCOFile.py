@@ -3,8 +3,8 @@ import csv
 import os
 from utils import CreateRootTree, LinkToRootTree, SaveTree
 
-FOV    = 0.3                    # Size of the field of view. Shifts the FAZ to (x,y,z)=(0,0,0)
-Radius = 0.005                  # Fixed radius for all vessels
+FOV    = 0.3                    # Size of the field of view. Shifts the FAZ to (x,y,z)=(0,0,0), in cm
+Radius = 0.005                  # Fixed radius for all vessels, in cm
                                 # TODO: add radius for each vessel
 NVessels = 0                    # Number of vessels
 NSegments = 0                   # Total number of segments in the segmented vessels

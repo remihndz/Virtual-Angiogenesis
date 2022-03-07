@@ -39,11 +39,11 @@ orderDistribution = np.zeros((maxOrder,))
 
 # Load the data
 for Id, radius, length, flow, stage, order in treesData:
-    r,l = radius*1e4, length*1e4 # Convert to microns
+    r,l = radius*1e3, length*1e3 # Convert to microns
     i,j = int(order)-1, int(Id)
-    dataRadius[i, j] = radius
-    dataLength[i, j] = length
-    dataAspectRatio[i, j] = length/radius
+    dataRadius[i, j] = r
+    dataLength[i, j] = l
+    dataAspectRatio[i, j] = l/r
     orderDistribution[i] += 1
 
 orderDistribution /= len(sys.argv[1:])

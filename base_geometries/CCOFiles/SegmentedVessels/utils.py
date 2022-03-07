@@ -116,14 +116,15 @@ def SaveTree(filename, VesselsData, VesselsConn, RootData, RootConn):
     Radius = 0.004
     # global tree information
     xPerf = RootData[0][1:4]
-    qProx = 10.00
+    qProx = 9.41e-6             # in cl/s from Takahashi
+    refPressure = 5.75e-10      # in cl/s from Takahashi
     psiFactor = 6.25e-07
     dp        = 3.04e+07
     nTerms    = 2
     for segment in VesselsData:
         if len(segment) == 2:
             nTerms+=1
-    refPressure = 0.0
+
     pointCounter = 0
     rootRadius   = Radius
     variationTolerance = 1e-05
@@ -137,7 +138,7 @@ def SaveTree(filename, VesselsData, VesselsConn, RootData, RootConn):
         qReservedFrac  = 0.0
         branchingMode  = 0      # BRANCHING_MODE {NO_BRANCHING, RIGID_PARENT, DEFORMABLE_PARENT, DISTAL_BRANCHING, ONLY_AT_PARENT_HOTSPOTS}
         vesselFunction = 2      # VESSEL_FUNCTION { DISTRIBUTION, PERFORATOR, TRANSPORT }
-        stage          = -2     # 0 for the 'root', 1 for the segmented vessels
+        stage          = -2     # -2 for the 'root', -1 for the segmented vessels
         
         f.write('*Vessels\n')
         f.write(str(len(VesselsData) + len(RootData)) + '\n')
