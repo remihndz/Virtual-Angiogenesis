@@ -37,8 +37,59 @@ def ReadTree(ccoFile):
             else:
                 Id, parentId, children = int(row[0]), int(row[1]), [int(i) for i in row[2:]]
                 treeConnectivity.append([Id, parentId, children])         
-
+        
     return treeData, treeConnectivity
+
+
+def BifurcationOrder(treeData, treeConnectivity):
+    
+    treeConnectivity.sort()
+    currentOrder = 0
+    vessel = treeConnectivity[0]
+    vesselDict = {vessel[0]: [vessel[1], vessel[2], currentOrder]}
+    for vessel in treeConnectivity[1:]:
+        if len(vessel)>2:
+            IdVessel, IdParent, ChildrenList = vessel
+        else:
+            IdVessel, IdParent = vessel
+            ChildrenList = []
+        vesselDict[IdVessel] = [IdParent, ChildrenList, currentOrder]
+
+    prunedTree = copy.deepcopy(vesselDict)
+    branching = 0
+
+    orders = np.zeros((len(treeConnectivity),))
+
+    def updateTree(vessel, currentOrder=0):
+        # Go up the tree and update all orders
+        parent = v[1]
+        while(parent):
+            currentOrder+=1
+            orders[parent] = currentOrder
+            
+            
+
+    for v in treeConnectivity:
+        if len(v[-1])==0:       # if terminal segment
+            updateTree(v, currentOrder=0)
+
+                    
+                
+
+    # Add stream order to vessel data
+    treeDataNoRoot = []
+    count = 0
+    for vessel in treeData:
+        Id = int(vessel[0])
+        order = prunedTree[Id][-1]
+        treeData[Id].append(order)
+
+        if treeData[Id][-2]>=-1:
+            Id, radius, length, flow, stage, order = treeData[Id]
+            treeDataNoRoot.append([count, radius, length, flow, stage, order])
+            count+=1
+    return treeDataNoRoot
+
 
 def StrahlerOrder(treeData, treeConnectivity):
 
@@ -192,39 +243,66 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
     
     return
 
-def PlotLineAndBars(x, yline, ybars, labels=[r'Radius ($\mu m$)', 'Number of vessels per stream order'], fontsize=14, logplot=False):
 
-    plt.style.use('seaborn')
-    width = 345
-
-    tex_fonts = {
-            # Use LaTeX to write all text
-            "text.usetex": True,
-            "font.family": "serif",
-            # Use 10pt font in plots, to match 10pt font in document
-            "axes.labelsize": fontsize,
-            "font.size": fontsize,
-            # Make the legend/label fonts a little smaller
-            "legend.fontsize": fontsize-2,
-            "xtick.labelsize": fontsize-2,
-            "ytick.labelsize": fontsize-2
-        }
-
-    plt.rcParams.update(tex_fonts)
+def BifurcationDiameterRatio(treeData, treeConnectivity, plot=False):
+    '''
+    Return the ratio of the smaller daughter vessel to the larger (dsdl)
+    against the ratio of the larger daughter to the parent vessel (dldp)
+    '''
     
-    plt.figure()
-    plt.rcParams['font.size'] = fontsize
-    plt.xlabel('Horton-Srahler stream order')
-    # plt.ylim(yline[0,:].min()*0.75, yline[0,:].max()*1.25)
-    # plt.ylim(min()*0.75, yline[0,:].max()*1.25)
-    plt.ylabel(labels[0])
-    if logplot:
-        plt.yscale('log')
-    plt.errorbar(x, yline[0,:], yline[1,:], capsize=4, color='black')
+    copyData = copy.deepcopy(treeData)
+    copyData.sort()
+    data = []
+    for Id, parentId, children in treeConnectivity:
+        if parentId>0 and len(children)==2: # parentId=-1 if its root
+            
+            dp = copyData[parentId][1]
+            dchildren = [copyData[children[0]][1], copyData[children[1]][1]]
+            ds = min(dchildren)
+            dl = max(dchildren)
 
-    ax2 = plt.twinx()
-    ax2.set_ylim(ybars.min()*0.75, ybars.max()*1.25)
-    ax2.set_ylabel(labels[1])
-    ax2.bar(x, ybars, alpha=0.3, color='gray')
-    plt.show()
-    return
+            # dsdl.append(ds/dl)
+            # dldp.append(dl/dp)
+            data.append([ds/dl, dl/dp, parentId])
+
+    data.sort()
+    data = np.array(data)
+    dsdl, dldp, Ind = data[:,0], data[:,1], data[:,2]
+
+    if plot:
+        aggregatedData = []
+        # x = np.linspace(data[:,0].min(),1, 10)
+        x = [0, 0.2, 0.4, 0.6, 0.8, 1.0]
+        for i,xi in enumerate(x[1:]):
+            xim = x[i]
+            mask = (dsdl>xim) & (dsdl<xi)
+            aggregatedData.append(dldp[mask])
+
+        plt.boxplot(aggregatedData, positions=x[1:])        
+        # plt.scatter(dsdl, dldp, label='This work')
+
+        m = 2.85
+        x = np.linspace(0.2,1,500)
+        y = np.linspace(0.2,1,500)
+        X,Y = np.meshgrid(x,y)
+
+        f,g = Y**(-m), 1+X**m
+        z = f-g
+        cs1 = plt.contour(X,Y, z, [0], linestyles='--', linewidths=1.)
+        m = 3
+        f,g = Y**(-m), 1+X**m
+        cs2 = plt.contour(X,Y,(f-g), [0], linestyles='-.', linewidths=1.)
+
+        cs1.collections[0].set_label('m=2.85')
+        cs2.collections[0].set_label('m=3')
+                
+        plt.xlim(0,1.2)
+        # plt.ylim(0,1.2)
+        # plt.yscale('log')
+    
+        plt.legend()
+        plt.show()
+
+    return [a for a in dsdl], [a for a in dldp]
+
+
