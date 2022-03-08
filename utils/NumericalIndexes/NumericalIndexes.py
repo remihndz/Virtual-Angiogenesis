@@ -1,10 +1,13 @@
 import sys
 from utils import *
+from math import pi
 
 assert(len(sys.argv) > 1)
 listOfFiles = sys.argv[1:]
 
-VAD, VPI, VDI, VCI, VSD = StatisticsMultipleTrees(listOfFiles)
+domainAreaInCm = 0.09 - 0.04**2*pi
+
+VAD, VPI, VDI, VCI, VSD = StatisticsMultipleTrees(listOfFiles, domainAreaInCm=domainAreaInCm)
 print(f"Found {len(listOfFiles):d} files.")
 print("Metric  |  Mean+-std")
 print(f"VAD     |  {VAD.mean()} +- {VAD.std()}")
