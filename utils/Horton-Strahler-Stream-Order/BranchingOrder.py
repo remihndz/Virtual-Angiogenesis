@@ -3,8 +3,14 @@ from pathlib import Path
 from utils import *
 from numpy import loadtxt
 
-# Parameters of the plot
+# How many order to compute (stacks all vessels above that into the same order)
+orderMax = 1200
+
+
+# Parameters of the plots
 fontsize = 16
+markersize = 10
+
 # plt.style.use('classic')
 width = 345
 tex_fonts = {
@@ -28,11 +34,11 @@ for ccoFile in sys.argv[1:]:
     print("Reading file", Path(ccoFile).stem + '.cco')
     data, connectivity = ReadTree(ccoFile)
 
-    orderedData = BifurcationOrder(data, connectivity)
+    orderedData = BifurcationOrder(data, connectivity, orderMax=orderMax)
     treesData.extend(orderedData)
     a,b = BifurcationDiameterRatio(data, connectivity, plot=False)
     bifRatios.append([a,b])
-    rad = np.array(data)[:,1]*1e3
+    rad = np.array(orderedData)[:,1]*1e3
     minR.append(rad.min())
     maxR.append(rad.max())
 
@@ -72,7 +78,7 @@ stdRadius = np.zeros((2, maxOrder))
 stdLength = np.zeros_like(stdRadius)
 stdAspectRatio = np.zeros_like(stdRadius)
 
-countR, countL, countAsp =  np.zeros((2, maxOrder)),  np.zeros((2, maxOrder)),  np.zeros((2, maxOrder))
+countR, countL, countAsp =  np.ones((2, maxOrder)),  np.ones((2, maxOrder)),  np.ones((2, maxOrder))
 for i in range(dataRadius.shape[0]):
     for j in range(dataRadius.shape[1]):
         meanR, meanL, meanAsp = meanRadius[j], meanLength[j], meanAspectRatio[j]
@@ -89,47 +95,61 @@ for i in range(dataRadius.shape[0]):
 stdRadius, stdLength, stdAspectRatio = np.divide(stdRadius, countR), np.divide(stdLength, countL), np.divide(stdAspectRatio, countAsp)
 stdRadius, stdLength, stdAspectRatio = stdRadius**.5, stdLength**.5, stdAspectRatio**.5
 
+cutoff = 9
+meanRadiusBis, stdRadiusBis, orderDistributionBis  = np.zeros((cutoff+1,)), np.zeros((2,cutoff+1)), np.zeros((cutoff+1,))
+meanRadiusBis[:-1] = meanRadius[:cutoff]
+meanRadiusBis[-1] = np.mean(meanRadius[cutoff:])
+stdRadiusBis[:,:-1] = stdRadius[:,:cutoff]
+stdRadiusBis[:,-1] = np.nan_to_num(np.mean(stdRadius[cutoff:]**2)**.5)
+orderDistributionBis[:-1] = orderDistribution[:cutoff]
+orderDistributionBis[-1] = np.sum(orderDistribution[cutoff:])
+
+meanRadius, stdRadius, orderDistribution = meanRadiusBis, stdRadiusBis, np.flip(orderDistributionBis)
+
 # Load data from papers
-x = np.arange(1, maxOrder+1)
-Takahashi = np.loadtxt('img/Takahashi.dat')[3:,:] # By column: order, diameter, length
-Takahashi[:,0] = np.flip(Takahashi[:,0])-Takahashi[:,0].min()+1
+
+x = np.arange(meanRadius.shape[0])
+Takahashi = np.loadtxt('img/Takahashi.dat')[5:,:] # By column: order, diameter, length
+
+# Uncomment for small to large classification
+# Takahashi[:,0] = np.flip(Takahashi[:,0])-Takahashi[:,0].min()+1
 An = np.loadtxt('img/An2020MeanDiameter.dat')   # By column: order, mean diameter
-# YuLength = np.loadtxt('img/Yu2010Length.dat')   # By column: order, mean length, std
-# YuDiameter = np.loadtxt('img/Yu2010Diameter.dat') # By column: order, mean diameter (width), std
+
+YuLength = np.loadtxt('img/Yu2010Length.dat')   # By column: order, mean length, std
+YuDiameter = np.loadtxt('img/Yu2010Diameter.dat') # By column: order, mean diameter (width), std
 KornfieldDiameter = np.loadtxt('img/Kornfield2014.dat')
 
 plt.figure(1)
-plt.xlabel('Horton-Strahler stream order')
+plt.xlabel('Number of bifurcations')
 plt.ylabel(r'Diameter ($\mu m$)')
-plt.errorbar(x, 2*meanRadius, 2*stdRadius, capsize=4, color='black',
-             label=f'This work ({(2*minR).mean():1.2f}+-{(2*minR).std():1.2f}, {(2*maxR).mean():1.2f}+-{(2*maxR).std():1.2f})',
-             marker='s')
+plt.errorbar(x, np.flip(2*meanRadius), np.flip(2*stdRadius), capsize=4, color='black',
+             label=f'This work (diameter range: {(2*minR).mean():1.1f} to {(2*maxR).mean():1.1f})',
+             marker='s', markersize=markersize)
 
-# plt.plot(Takahashi[:,0], Takahashi[:,1], label="Takahashi's ideal network", linestyle='-.', color='black')
+plt.plot(Takahashi[:,1], label="Takahashi's ideal network", linestyle='-.', color='black')
 
-# plt.plot(x[-int(An[:,0].max()):], np.flip(An[:,1]), label='An 2020, mean value', linestyle='--', marker='^', color='black')
+plt.plot(An[:,1], label='An 2020, mean value', linestyle='--', marker='^', color='black', markersize=markersize)
 
-# plt.plot(x[-int(KornfieldDiameter[:,0].max()):], np.flip(KornfieldDiameter[:,1]), label='Kornfield 2014, rat retina', linestyle='dotted', marker='v', color='black')
+plt.plot(KornfieldDiameter[:,1], label='Kornfield 2014, rat retina', linestyle='dotted', marker='v', color='black', markersize=markersize)
 
-
-# plt.errorbar(YuDiameter[:,0]+6, YuDiameter[:,1], YuDiameter[:,2], label=r'Yu 2020, mean$\pm$std', linestyle='dotted', marker='v', color='black', capsize=4)
+# plt.errorbar(range(YuDiameter[:,0].size), YuDiameter[:,1], YuDiameter[:,2], label=r'Yu 2020, mean$\pm$std', linestyle='dotted', marker='v', color='black', capsize=4, markersize=markersize)
 
 # plt.yscale('log')
 # plt.grid(True, which='both', linestyle='dotted')
 plt.legend()
 ax2 = plt.twinx()
-ax2.set_ylabel('Average number of vessels per stream order')
+ax2.set_ylabel('Average number of vessels per group')
 ax2.bar(x, orderDistribution, alpha=0.3, color='gray')
 
 # plt.figure(2)
-# plt.xlabel('Horton-Strahler stream order')
+# plt.xlabel('Number of bifurcations')
 # plt.ylabel(r'Length ($\mu m$)')
 # plt.errorbar(x, meanLength, stdLength, capsize=4, color='black')
 # plt.plot(Takahashi[:,0], Takahashi[:,2], label="Takahashi's ideal network", linestyle='-.', color='black')
 
-# # plt.errorbar(YuDiameter[:,0]+6, YuLength[:,1], YuLength[:,2], label=r'Yu 2020, mean$\pm$std', marker='v', linestyle='dotted', color='black', capsize=4)
-
+# plt.errorbar(range(YuLength[:,0].size), YuLength[:,1], YuLength[:,2], label=r'Yu 2020, mean$\pm$std', marker='v', linestyle='dotted', color='black', capsize=4, markersize=markersize)
 # plt.legend()
+
 # ax2 = plt.twinx()
 # ax2.set_ylabel('Average number of vessels per stream order')
 # ax2.bar(x, orderDistribution, alpha=0.3, color='gray')
