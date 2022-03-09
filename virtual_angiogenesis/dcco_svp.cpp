@@ -115,6 +115,7 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
 
 int main(int argc, char *argv[])
 {
+
   // Read the configuration file passed as command line argument
   string ConfigurationFileName = argv[1];
   ifstream config;
