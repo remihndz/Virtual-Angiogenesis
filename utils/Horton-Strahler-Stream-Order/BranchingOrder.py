@@ -8,7 +8,7 @@ orderMax = 1200
 
 
 # Parameters of the plots
-fontsize = 16
+fontsize = 20
 markersize = 10
 
 # plt.style.use('classic')
