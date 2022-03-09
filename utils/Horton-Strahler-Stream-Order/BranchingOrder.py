@@ -28,7 +28,7 @@ for ccoFile in sys.argv[1:]:
     print("Reading file", Path(ccoFile).stem + '.cco')
     data, connectivity = ReadTree(ccoFile)
 
-    orderedData = StrahlerOrder(data, connectivity)
+    orderedData = BifurcationOrder(data, connectivity)
     treesData.extend(orderedData)
     a,b = BifurcationDiameterRatio(data, connectivity, plot=False)
     bifRatios.append([a,b])
@@ -47,14 +47,8 @@ dataAspectRatio   = np.zeros((maxOrder, len(treesData)))
 orderDistribution = np.zeros((maxOrder,))
 
 # Load the data
-cutoff = 0
 for Id, radius, length, flow, stage, order in treesData:
     r,l = radius*1e3, length*1e3 # Convert to microns
-    # if r<cutoff:
-    #     print(Id)
-    #     i,j = 0, int(Id)
-    # else:
-    #     i,j = max(int(order)-1,1), int(Id)
     i,j = int(order)-1, int(Id)
     dataRadius[i, j] = r
     dataLength[i, j] = l
@@ -111,11 +105,13 @@ plt.errorbar(x, 2*meanRadius, 2*stdRadius, capsize=4, color='black',
              label=f'This work ({(2*minR).mean():1.2f}+-{(2*minR).std():1.2f}, {(2*maxR).mean():1.2f}+-{(2*maxR).std():1.2f})',
              marker='s')
 
-plt.plot(Takahashi[:,0], Takahashi[:,1], label="Takahashi's ideal network", linestyle='-.', color='black')
+# plt.plot(Takahashi[:,0], Takahashi[:,1], label="Takahashi's ideal network", linestyle='-.', color='black')
 
-plt.plot(x[-int(An[:,0].max()):], np.flip(An[:,1]), label='An 2020, mean value', linestyle='--', marker='^', color='black')
+# plt.plot(x[-int(An[:,0].max()):], np.flip(An[:,1]), label='An 2020, mean value', linestyle='--', marker='^', color='black')
 
-plt.plot(x[-int(KornfieldDiameter[:,0].max()):], np.flip(KornfieldDiameter[:,1]), label='Kornfield 2014, rat retina', linestyle='dotted', marker='v', color='black')
+# plt.plot(x[-int(KornfieldDiameter[:,0].max()):], np.flip(KornfieldDiameter[:,1]), label='Kornfield 2014, rat retina', linestyle='dotted', marker='v', color='black')
+
+
 # plt.errorbar(YuDiameter[:,0]+6, YuDiameter[:,1], YuDiameter[:,2], label=r'Yu 2020, mean$\pm$std', linestyle='dotted', marker='v', color='black', capsize=4)
 
 # plt.yscale('log')

@@ -117,7 +117,7 @@ def SaveTree(filename, VesselsData, VesselsConn, RootData, RootConn):
     # global tree information
     xPerf = RootData[0][1:4]
     qProx = 9.41e-6             # in cl/s from Takahashi
-    refPressure = 5.75e-10      # in cl/s from Takahashi
+    refPressure = 22.9          # in mmHg from Takahashi
     psiFactor = 6.25e-07
     dp        = 3.04e+07
     nTerms    = 2
@@ -126,7 +126,7 @@ def SaveTree(filename, VesselsData, VesselsConn, RootData, RootConn):
             nTerms+=1
 
     pointCounter = 0
-    rootRadius   = Radius
+    rootRadius   = Radius*2
     variationTolerance = 1e-05
 
     with open(filename, 'w') as f:
@@ -136,7 +136,7 @@ def SaveTree(filename, VesselsData, VesselsConn, RootData, RootConn):
         # Vessel information
         unused         = 0.0
         qReservedFrac  = 0.0
-        branchingMode  = 0      # BRANCHING_MODE {NO_BRANCHING, RIGID_PARENT, DEFORMABLE_PARENT, DISTAL_BRANCHING, ONLY_AT_PARENT_HOTSPOTS}
+        branchingMode  = 0 
         vesselFunction = 2      # VESSEL_FUNCTION { DISTRIBUTION, PERFORATOR, TRANSPORT }
         stage          = -2     # -2 for the 'root', -1 for the segmented vessels
         
@@ -150,9 +150,8 @@ def SaveTree(filename, VesselsData, VesselsConn, RootData, RootConn):
 
         
         stage+=1
-        vesselFunction = 1
-        branchingMode = 1
-        vesselFunction = 0      # VESSEL_FUNCTION { DISTRIBUTION, PERFORATOR, TRANSPORT }
+        branchingMode = 1       # BRANCHING_MODE {NO_BRANCHING, RIGID_PARENT, DEFORMABLE_PARENT, DISTAL_BRANCHING, ONLY_AT_PARENT_HOTSPOTS}
+        vesselFunction = 1      # VESSEL_FUNCTION { DISTRIBUTION, PERFORATOR, TRANSPORT }
         for segment in VesselsData:
             vtkSegmentId = segment[0]
             xProx = segment[1:4]
