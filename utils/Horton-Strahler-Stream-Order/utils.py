@@ -44,44 +44,31 @@ def ReadTree(ccoFile):
 def BifurcationOrder(treeData, treeConnectivity):
     
     treeConnectivity.sort()
-    currentOrder = 0
-    vessel = treeConnectivity[0]
-    vesselDict = {vessel[0]: [vessel[1], vessel[2], currentOrder]}
-    for vessel in treeConnectivity[1:]:
-        if len(vessel)>2:
-            IdVessel, IdParent, ChildrenList = vessel
-        else:
-            IdVessel, IdParent = vessel
-            ChildrenList = []
-        vesselDict[IdVessel] = [IdParent, ChildrenList, currentOrder]
-
-    prunedTree = copy.deepcopy(vesselDict)
-    branching = 0
-
     orders = np.zeros((len(treeConnectivity),))
 
-    def updateTree(vessel, currentOrder=0):
+    def updateTree(vessel, currentOrder=1):
         # Go up the tree and update all orders
-        parent = v[1]
-        while(parent):
-            currentOrder+=1
-            orders[parent] = currentOrder
-            
-            
+        parentId = int(vessel[1])
 
+        orderMax = 30
+        if parentId:
+            orders[parentId] = max(currentOrder, orders[parentId])
+            parent = treeConnectivity[parentId]
+            updateTree(parent, min(currentOrder+1,orderMax))
+        else:
+            orders[parentId] = min(currentOrder, orderMax)
+            return
+    
     for v in treeConnectivity:
         if len(v[-1])==0:       # if terminal segment
-            updateTree(v, currentOrder=0)
-
-                    
-                
+            updateTree(v, currentOrder=1)
 
     # Add stream order to vessel data
     treeDataNoRoot = []
     count = 0
     for vessel in treeData:
         Id = int(vessel[0])
-        order = prunedTree[Id][-1]
+        order = orders[Id]
         treeData[Id].append(order)
 
         if treeData[Id][-2]>=-1:
