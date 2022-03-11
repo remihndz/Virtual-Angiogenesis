@@ -30,3 +30,17 @@
 *.exe
 *.out
 *.app
+
+# Results folder
+Results/*
+perfused_geometries/*
+
+# Build folder
+build/*
+
+# Scripts
+*.sh
+
+# Temporary files
+*~
+

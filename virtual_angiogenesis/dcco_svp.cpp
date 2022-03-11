@@ -20,8 +20,11 @@
 #include<structures/vascularElements/AbstractVascularElement.h>
 #include<io/VTKObjectTreeNodalWriter.h>
 #include<structures/domain/DomainNVR.h>
+#include<structures/domain/SimpleDomain2D.h>
 #include<structures/domain/NormalDistributionGenerator.h>
 #include<structures/vascularElements/SingleVessel.h>
+#include<structures/tree/AdimSproutingVolumetricCostEstimator.h>
+#include<structures/tree/SproutingVolumetricCostEstimator.h>
 
 using namespace std;
 
@@ -37,8 +40,17 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
 {
   
   // Simulation parameters for each stage
-  GeneratorData *gen_data = new GeneratorData(16000, N_fail, l_lim_fr, perfusion_area_factor,
-						close_neighborhood_factor, 0.25, Delta_nu, 0, false);
+  SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
+  AbstractCostEstimator *costEstimator = FSprout;
+  GeneratorData *gen_data = new GeneratorData(160, N_fail, l_lim_fr, perfusion_area_factor,
+					      close_neighborhood_factor, 0.25, Delta_nu, 0, false,
+					      costEstimator);
+
+  GeneratorData *gen_data_stage2 = new GeneratorData(160, N_fail, l_lim_fr, perfusion_area_factor,
+					      1.0, 0.25, Delta_nu, 0, false,
+					      costEstimator);
+    
+  
 
   // Domain definition for stage 1
   DomainNVR *domain_1 = new DomainNVR(Hull, NVR_1, n_draw, seed, gen_data);
@@ -47,7 +59,7 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
   cout << "Domain 1 generated." << endl;
 
   // Domain definition for stage 2
-  DomainNVR *domain_2 = new DomainNVR(Hull, NVR_2, n_draw, seed, gen_data);
+  DomainNVR *domain_2 = new DomainNVR(Hull, NVR_2, n_draw, seed, gen_data_stage2);
   domain_2->setIsConvexDomain(true);
   domain_2->setMinBifurcationAngle(theta_min);
   cout << "Domain 2 generated." << endl;
@@ -66,24 +78,35 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
   is_root_tree_correct.close();
   
   SingleVesselCCOOTree *tree = new SingleVesselCCOOTree(root_tree_filename, gen_data, gam, delta, eta);
-
   tree->setIsInCm(true);
-  
-  long long int n_term_total = n_term_1 + n_term_2;
+  tree->setCurrentStage(2);
+  int currentStage{tree->getCurrentStage()};
+  cout << "Root tree successfully loaded... ";
+  cout << "Current stage is: " << currentStage << endl; 
+  cout << "Saving root tree.\n" << endl;
+  // Save the root tree
+  VTKObjectTreeNodalWriter *tree_writer = new VTKObjectTreeNodalWriter();
+  tree_writer->write(output_filename + "_root.vtp", tree);
+  tree->save(output_filename + ".cco.root");
+  staged_domain->setInitialStage(0);
+
+  long long int n_term_total = n_term_1 + n_term_2 + tree->getNTerms();
   
   StagedFRROTreeGenerator *tree_generator = new StagedFRROTreeGenerator(staged_domain, tree,
 									n_term_total,
 									{gam, gam},
 									{delta, delta},
 									{eta, eta});
+  tree_generator->setDLim(tree_generator->getDLim()/2.);
+  
   cout << "Staged tree generator initialised." << endl;
   
   cout << "Starting tree generation." << endl;
-  tree = {(SingleVesselCCOOTree *) tree_generator->resume(50, "./")};
+  tree = {(SingleVesselCCOOTree *) tree_generator->resume(200, "./")};
   cout << "Finished generating the tree." << endl;
 
   cout << "Saving the results..." << endl;
-  VTKObjectTreeNodalWriter *tree_writer = new VTKObjectTreeNodalWriter();
+
   tree->save(output_filename + ".cco");  
   tree_writer->write(output_filename + ".vtp", tree);
   cout << "Output written in " << output_filename << ".cco and " << output_filename << ".vtp." << endl;
@@ -92,6 +115,7 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
 
 int main(int argc, char *argv[])
 {
+
   // Read the configuration file passed as command line argument
   string ConfigurationFileName = argv[1];
   ifstream config;
@@ -215,7 +239,7 @@ int main(int argc, char *argv[])
   // Buffer size for random point generation
   int n_draw {10000};
   // Random seed
-  int seed {2208};
+  long long int seed {time(nullptr)};
   
   Vascularise(output_filename, input_cco, Hull, NVR_1, NVR_2, n_term_1, n_term_2,
 	      gam, delta, eta, n_draw, seed, N_fail, l_lim_fr,
