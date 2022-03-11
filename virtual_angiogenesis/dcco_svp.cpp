@@ -26,6 +26,9 @@
 #include<structures/tree/AdimSproutingVolumetricCostEstimator.h>
 #include<structures/tree/SproutingVolumetricCostEstimator.h>
 
+#include<stats/ObjectTreeStatsManager.h>
+#include<stats/VesselObjectHandler.h>
+
 using namespace std;
 
 void Vascularise(string output_filename, string root_tree_filename, string Hull,
@@ -105,7 +108,29 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
   tree->save(output_filename + ".cco");  
   tree_writer->write(output_filename + ".vtp", tree);
   cout << "Output written in " << output_filename << ".cco and " << output_filename << ".vtp." << endl;
+
+  ObjectTreeStatsManager *statsManager = new ObjectTreeStatsManager(tree);
+  vector<double> levels, means, stds;
+  VesselObjectHandler::ATTRIBUTE att = VesselObjectHandler::ATTRIBUTE::DIAMETER;
+  
+
+  // Load the vectors with levels and the diameter for each vessel
+  statsManager->getMeanPerLevel(&levels, &means, &stds, att);
+  string fileName = output_filename + "_diameters.dat";
+  ofstream diameterFile(fileName);
+  for (int i = 0; i<levels.size(); i++)
+    {
+      diameterFile << levels[i] << ' ' << means[i] << ' ' << stds[i] << endl;
+    }
+  
+  diameterFile.close();
+
 }
+
+
+
+
+
 
 
 int main(int argc, char *argv[])
