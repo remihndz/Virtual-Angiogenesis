@@ -189,12 +189,7 @@ X,Y = np.meshgrid(x,y)
 f,g = Y**(-m), 1+X**m
 z = f-g
 cs1 = plt.contour(X,Y, z, [0], linestyles='--', linewidths=3)
-m = 3
-f,g = Y**(-m), 1+X**m
-cs2 = plt.contour(X,Y,(f-g), [0], linestyles='-.', linewidths=3)
-
-cs1.collections[0].set_label('Theoretical, m=2.85')
-cs2.collections[0].set_label('Theoretical, m=3')
+cs1.collections[0].set_label(r"Murray's law with $\gamma=2.85$")
 
 plt.xlabel("ds/dl")
 plt.ylabel("dl/dp")
