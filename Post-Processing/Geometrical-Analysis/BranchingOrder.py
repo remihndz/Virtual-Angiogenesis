@@ -119,7 +119,7 @@ YuLength = np.loadtxt('img/Yu2010Length.dat')   # By column: order, mean length,
 YuDiameter = np.loadtxt('img/Yu2010Diameter.dat') # By column: order, mean diameter (width), std
 KornfieldDiameter = np.loadtxt('img/Kornfield2014.dat')
 
-plt.figure(1)
+plt.figure(1, figsize=[8.8, 7.2])
 plt.xlabel('Number of bifurcations')
 plt.ylabel(r'Diameter ($\mu m$)')
 plt.errorbar(x, np.flip(2*meanRadius), np.flip(2*stdRadius), capsize=4, color='black',
@@ -166,8 +166,9 @@ ax2.bar(x, orderDistribution, alpha=0.3, color='gray')
 print('Min/max diameter for my networks:', minD, maxD)
 print('Min/max for Takahashi:', Takahashi[:,1].min(), ' / ', Takahashi[:,1].max())
 
+plt.savefig('DiameterVsBranchingOrder.png', dpi=300, bbox_inches='tight')
 
-plt.figure(2)
+plt.figure(2, figsize=[7.2, 5.6])
 bifRatios.sort()
 bifRatios = np.array(bifRatios)
 dsdl, dldp = bifRatios[:,0], bifRatios[:,1]
@@ -197,6 +198,7 @@ plt.xlim(0,1.2)
 plt.ylim(0,1.2)
 plt.legend()
 
+plt.savefig('BifurcationRatio.png', dpi=300, bbox_inches='tight')
 
 plt.show()
 
