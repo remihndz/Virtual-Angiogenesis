@@ -7,20 +7,22 @@
 #include<vtkXMLImageDataWriter.h>
 #include<vtkCell.h>
 #include<vtkNew.h>
-#ifdef VTK_CELL_ARRAY_V2
-#include <vtkCellArrayIterator.h>
-#endif // VTK_CELL_ARRAY_V2
 
 void CoordinatesToPixel(double *point, int *dimensions, int* pixel)
 {
   double dx {0.3/dimensions[0]}, dy {0.3/dimensions[1]};
-  pixel[0] = int(point[0]/dx);
-  pixel[1] = int(point[1]/dy);
+  pixel[0] = floor(dimensions[0]/2.0) + int(point[0]/dx);
+  pixel[1] = floor(dimensions[1]/2.0) + int(point[1]/dy);
   pixel[2] = 0;  
 }
 
 int main()
 {
+  int n = 800;			// Number of pixels per axis
+  double xmin {-0.15}, xmax {0.15}; // Field of view
+  double ymin {-0.15}, ymax {0.15}; // Field of view
+  
+  
   // Read the source file.
   vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
   reader->SetFileName("..//perfused_geometries/Baseline.vtp");
@@ -29,8 +31,8 @@ int main()
 
   // Clipping
   vtkSmartPointer<vtkBox> boundingBox = vtkSmartPointer<vtkBox>::New();
-  boundingBox->SetBounds(-0.15, 0.15,
-			 -0.15, 0.15,
+  boundingBox->SetBounds(xmin, xmax,
+			 ymin, ymax,
 			 -0.15, 0.15);
 
   vtkSmartPointer<vtkClipPolyData> clipper = vtkSmartPointer<vtkClipPolyData>::New();
@@ -42,7 +44,7 @@ int main()
 
   vtkSmartPointer<vtkImageData> whiteImage = vtkSmartPointer<vtkImageData>::New();
   double *bounds = polyData->GetBounds();
-  int dimensions[3] = {304, 304, 1};
+  int dimensions[3] = {n, n, 1};
   int *dims = new int(3);
   
   whiteImage->SetDimensions(dimensions);
@@ -62,7 +64,7 @@ int main()
     cout << dims[i] << ' ';
   cout << endl;
 
-
+  
   for(unsigned int x = 0; x < dims[0]; x++)
     {
       for(unsigned int y = 0; y < dims[1]; y++)
@@ -73,15 +75,17 @@ int main()
 
   vtkSmartPointer<vtkPoints> points = polyData->GetPoints();
   vtkSmartPointer<vtkCellArray> lines = polyData->GetLines();
-  auto cellIter = vtk::TakeSmartPointer(lines->NewIterator());
-  for (cellIter->GoToFirstCell(); !cellIter->IsDoneWithTraversal(); cellIter->GoToNextCell())
+  vtkIdType *indices;
+  vtkIdType numberOfPoints;
+  unsigned int lineCount = 0;
+  for (lines->InitTraversal(); lines->GetNextCell(numberOfPoints, indices); lineCount++)
     {
-      vtkSmartPointer<vtkIdList> line = cellIter->GetCurrentCell();
       // Fill the pixels on the line with 0
       double x0[3], x1[3];
-      points->GetPoint(line->GetId(0), x0);
-      points->GetPoint(line->GetId(1), x1);
-      for (double t = 0; t<=1; t+=0.1)
+      points->GetPoint(indices[0], x0);
+      points->GetPoint(indices[1], x1);
+      double dt = 1e-4;
+      for (double t = 0; t<=1; t+=dt)
 	{
 	  double x[3] = {(1-t)*x0[0] + t*x1[0], (1-t)*x0[1] + t*x1[1], 0};
 	  int pixel[3];
@@ -89,19 +93,6 @@ int main()
 	  pixels[pixel[1]*dims[0] + pixel[0]] = 0;
 	}
     }
-  delete cellIter;
-
-
-  // vtkSmartPointer<vtkPoints> points = polyData->GetPoints();
-  // int nbOfPoints = points->GetNumberOfPoints();
-  // for (unsigned int i = 0; i < nbOfPoints; i++)
-  //   {
-  //     double *point = points->GetPoint(i);
-  //     int *pixel = new int(3);
-  //     CoordinatesToPixel(point, dims, pixel);
-  //     pixels[pixel[1] * dims[0] + pixel[0]] = 0;
-  //   }
-  
   
   vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
   writer->SetFileName("Test.vti");
