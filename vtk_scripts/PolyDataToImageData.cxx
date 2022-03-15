@@ -7,6 +7,8 @@
 #include<vtkXMLImageDataWriter.h>
 #include<vtkCell.h>
 #include<vtkNew.h>
+#include<vtkImageEuclideanDistance.h>
+#include<vtkImageShiftScale.h>
 
 void CoordinatesToPixel(double *point, int *dimensions, int* pixel)
 {
@@ -18,11 +20,10 @@ void CoordinatesToPixel(double *point, int *dimensions, int* pixel)
 
 int main()
 {
-  int n = 800;			// Number of pixels per axis
+  int n = 1200;			// Number of pixels per axis
   double xmin {-0.15}, xmax {0.15}; // Field of view
   double ymin {-0.15}, ymax {0.15}; // Field of view
-  
-  
+    
   // Read the source file.
   vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
   reader->SetFileName("..//perfused_geometries/Baseline.vtp");
@@ -42,19 +43,21 @@ int main()
   clipper->Update();
   polyData = clipper->GetOutput();
 
-  vtkSmartPointer<vtkImageData> whiteImage = vtkSmartPointer<vtkImageData>::New();
+  // Print the polydata tree on a vtkImageData where background is 1 and tree is 0
+  vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
   double *bounds = polyData->GetBounds();
   int dimensions[3] = {n, n, 1};
   int *dims = new int(3);
+  double spacing[3] = {(bounds[1]-bounds[0])/n, (bounds[3]-bounds[2])/n, 1};
   
-  whiteImage->SetDimensions(dimensions);
-  whiteImage->AllocateScalars(VTK_UNSIGNED_CHAR, 1);  
+  imageData->SetDimensions(dimensions);
+  imageData->AllocateScalars(VTK_UNSIGNED_CHAR, 1);  
 
-  dims = whiteImage->GetDimensions();
+  dims = imageData->GetDimensions();
   int z = 0;
-  unsigned char *pixels = static_cast<unsigned char *>(whiteImage->GetScalarPointer());
+  unsigned char *pixels = static_cast<unsigned char *>(imageData->GetScalarPointer());
   int extent[6];
-  whiteImage->GetExtent(extent);
+  imageData->GetExtent(extent);
   cout << "Image extent: ";
   for (const auto& e : extent)
     cout << e << ' ';
@@ -96,8 +99,36 @@ int main()
   
   vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
   writer->SetFileName("Test.vti");
-  writer->SetInputData(whiteImage);
+  writer->SetInputData(imageData);
   writer->Write();
 
+
+  // Compute the euclidean distance map
+  cout << "Spacings: " << spacing[0] << ' ' << spacing[1] << ' ' << spacing[2] << endl;  
+  vtkSmartPointer<vtkImageEuclideanDistance> dtFilter = vtkSmartPointer<vtkImageEuclideanDistance>::New();
+  dtFilter->SetAlgorithmToSaitoCached();
+  dtFilter->SetDimensionality(2);
+  dtFilter->SetInputData(imageData);
+  dtFilter->Update();
+
+  cout << "Created the filter" << endl;
+  
+  vtkSmartPointer<vtkImageData> distanceMap = vtkSmartPointer<vtkImageData>::New();
+
+  cout << "Created the distance map" << endl;
+  // Scale by the size of a pixel (distanceMap is the distance in pixels at this point)
+  vtkSmartPointer<vtkImageShiftScale> scaler = vtkSmartPointer<vtkImageShiftScale>::New();
+  scaler->SetOutputScalarTypeToDouble();
+  scaler->SetInputConnection(dtFilter->GetOutputPort());
+  scaler->SetScale(spacing[0]);
+  scaler->Update();
+
+  distanceMap = scaler->GetOutput();
+  
+  writer->SetFileName("DistanceMap.vti");
+  writer->SetInputData(distanceMap);
+  writer->Write();
+  
+  
   return EXIT_SUCCESS;
 }
