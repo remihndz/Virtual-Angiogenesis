@@ -65,7 +65,7 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
   StagedDomain *staged_domain = new StagedDomain();
   staged_domain->addStage(n_term_1, domain_1);
   staged_domain->addStage(n_term_2, domain_2);
-  cout << "Staged domain initiated." << endl;
+  cout << "Staged domain initialized." << endl;
 
   // Checking that the root tree's .cco file exists
   ifstream is_root_tree_correct {root_tree_filename};
