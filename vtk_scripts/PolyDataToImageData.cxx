@@ -1,5 +1,6 @@
 #include<cmath>
 
+// VTK libs
 #include<vtkSmartPointer.h>
 #include<vtkImageData.h>
 #include<vtkPolyData.h>
@@ -12,6 +13,12 @@
 #include<vtkImageEuclideanDistance.h>
 #include<vtkImageShiftScale.h>
 #include <vtkImageDilateErode3D.h>
+
+// OpenCV libs
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+
 
 void CoordinatesToPixel(double *point, int *dimensions, int* pixel)
 {
@@ -28,6 +35,31 @@ void PixelToCoordinates(int *pixel, int *dimensions, double* point)
   point[1] = -0.15 + dy * pixel[1];
 }
 
+cv::Mat convertVtkImageDataToCVMat(const vtkSmartPointer<vtkImageData> &vtkImage) {
+  int imageDimensions[3] = {0, 0, 0}; // Width, Hight, Depth --> Depth is not equal to number of image channels!
+  vtkImage->GetDimensions(imageDimensions);
+  int imageWidth = imageDimensions[0];
+  int imageHeight = imageDimensions[1];
+  int numberOfImageChannels = vtkImage->GetNumberOfScalarComponents();
+  int cvType = 0;
+  switch(numberOfImageChannels){
+    case 1: cvType = CV_8UC1; break;
+    case 3: cvType = CV_8UC3; break;
+    case 4: cvType = CV_8UC4; break;
+    default: std::cerr << "Check number of vtk image channels!" << std::endl;
+  }
+  auto resultingCVMat = cv::Mat(imageHeight, imageWidth, cvType);
+  // Loop over the vtkImageData contents.
+  for ( int heightPos = 0; heightPos < imageHeight; heightPos++ ){
+    for ( int widthPos = 0; widthPos < imageWidth; widthPos++ ){
+      auto pixel = static_cast<unsigned char *>(vtkImage->GetScalarPointer(widthPos, heightPos, 0));
+      resultingCVMat.at<unsigned char>(heightPos, widthPos) = *pixel;
+    }
+  }
+  return resultingCVMat;
+}
+
+
 int main()
 {
   int P;
@@ -36,11 +68,13 @@ int main()
   int n = pow(2, P);			// Number of pixels per axis
   double xmin {-0.15}, xmax {0.15}; // Field of view
   double ymin {-0.15}, ymax {0.15}; // Field of view
-    
+
+  unsigned int foregroundPixel {0}, backgroundPixel {255};
+  
   // Read the source file.
   vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
   reader->SetFileName("../Results/Results50Sims/sim1.vtp");
-  reader->Update();  // Needed because of GetScalarRange
+  reader->Update();  // Creates a deprecated warning
   vtkSmartPointer<vtkPolyData> polyData = reader->GetOutput();
 
   // Clipping
@@ -56,7 +90,7 @@ int main()
   clipper->Update();
   polyData = clipper->GetOutput();
 
-  // Print the polydata tree on a vtkImageData where background is 1 and tree is 0
+  // Print the polydata tree on a vtkImageData 
   vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
   double *bounds = polyData->GetBounds();
   int dimensions[3] = {n, n, 1};
@@ -88,10 +122,10 @@ int main()
 	  double point[3];
 	  int pixel[3] = {i,j,0};
 	  PixelToCoordinates(pixel, dims, point);
-	  if (pow(point[0],2) + pow(point[1],2) < pow(0.04 ,2))
-	    pixels[i * dims[0] + j] = 0;
-	  else
-	    pixels[i * dims[0] + j] = 1;   
+	  // if (pow(point[0],2) + pow(point[1],2) < pow(0.04 ,2))
+	  //   pixels[i * dims[0] + j] = foregroundPixel;
+	  // else
+	  pixels[i * dims[0] + j] = backgroundPixel;   
   	}
     }
 
@@ -112,7 +146,7 @@ int main()
 	  double x[3] = {(1-t)*x0[0] + t*x1[0], (1-t)*x0[1] + t*x1[1], 0};
 	  int pixel[3];
 	  CoordinatesToPixel(x, dims, pixel);
-	  pixels[pixel[1]*dims[0] + pixel[0]] = 0;
+	  pixels[pixel[1]*dims[0] + pixel[0]] = foregroundPixel;
 	}
     }
   
@@ -124,8 +158,6 @@ int main()
   dilateErode->Update();
   imageData = dilateErode->GetOutput();
 
-  double *spacingDT = imageData->GetSpacing();
-  cout << "Dilate Filter spacings: " << spacingDT[0] << ' ' << spacingDT[1] << ' ' << spacingDT[2] << endl;  
   vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
   writer->SetFileName("Test.vti");
   writer->SetInputData(imageData);
@@ -133,21 +165,13 @@ int main()
 
 
   // Compute the euclidean distance map
-  cout << "Spacings: " << spacing[0] << ' ' << spacing[1] << ' ' << spacing[2] << endl;  
   vtkSmartPointer<vtkImageEuclideanDistance> dtFilter = vtkSmartPointer<vtkImageEuclideanDistance>::New();
   dtFilter->SetAlgorithmToSaitoCached();
   dtFilter->SetDimensionality(2);
   dtFilter->SetInputData(imageData);
   dtFilter->Update();
-
-  spacingDT = dtFilter->GetOutput()->GetSpacing();
-  cout << "DT Filter spacings: " << spacingDT[0] << ' ' << spacingDT[1] << ' ' << spacingDT[2] << endl;
-
-  cout << "Created the filter" << endl;
-  
   vtkSmartPointer<vtkImageData> distanceMap = vtkSmartPointer<vtkImageData>::New();
 
-  cout << "Created the distance map" << endl;
   // Scale by the size of a pixel (distanceMap is the distance in pixels at this point)
   vtkSmartPointer<vtkImageShiftScale> scaler = vtkSmartPointer<vtkImageShiftScale>::New();
   scaler->SetOutputScalarTypeToDouble();
@@ -157,11 +181,29 @@ int main()
 
   distanceMap = scaler->GetOutput();
   distanceMap->SetSpacing(spacing);
-  spacingDT = distanceMap->GetSpacing();
-  cout << "Distance map spacings: " << spacingDT[0] << ' ' << spacingDT[1] << ' ' << spacingDT[2] << endl;
 
+  cv::Mat bwImage = convertVtkImageDataToCVMat(imageData);
+  // cv::imshow("Black Background Image", bwImage);
+  cv::Mat dist;
+  cv::distanceTransform(bwImage, dist, cv::DIST_L2, 3); // The last number is the mask size. Use 5 for more precise calculations
+  // Normalize the distance image for range = {0.0, 1.0}
+  // so we can visualize and threshold it
+  cv::normalize(dist, dist, 0, 1.0, cv::NORM_MINMAX);
+  // cv::imshow("Distance Transform Image", dist);
+  // Threshold to obtain the peaks
+  // This will be the markers for the foreground objects
+  cv::threshold(dist, dist, 0.4, 1.0, cv::THRESH_BINARY);
+  // Dilate a bit the dist image
+  cv::Mat kernel1 = cv::Mat::ones(3, 3, CV_8U);
+  cv::dilate(dist, dist, kernel1);
+  // cv::imshow("Dilated Distance map", dist);
+
+  cv::waitKey(0);
+
+  cv::Scalar ICDOpenCV = cv::mean(dist);
+  cout << "ICD computed by openCV: " << ICDOpenCV[0] << endl;
+  
   // Compute average intercapillary distance
-  // pixels = static_cast<unsigned char *>(distanceMap->GetScalarPointer());
   double ICD = 0;
   int count = 0;
   for(int i = 0; i < dims[0]; i++)
@@ -177,7 +219,7 @@ int main()
   	}
     }
   
-  cout << "ICD: " << ICD/count << " with " << count << " pixels counted." << endl;
+  cout << "ICD: " << ICD/count << " with " << count << " pixels counted out of: " << dims[0]*dims[1] << "." << endl;
   
   writer->SetFileName("DistanceMap.vti");
   writer->SetInputData(distanceMap);
