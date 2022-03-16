@@ -1,3 +1,5 @@
+#include<cmath>
+
 #include<vtkSmartPointer.h>
 #include<vtkImageData.h>
 #include<vtkPolyData.h>
@@ -9,6 +11,7 @@
 #include<vtkNew.h>
 #include<vtkImageEuclideanDistance.h>
 #include<vtkImageShiftScale.h>
+#include <vtkImageDilateErode3D.h>
 
 void CoordinatesToPixel(double *point, int *dimensions, int* pixel)
 {
@@ -18,15 +21,25 @@ void CoordinatesToPixel(double *point, int *dimensions, int* pixel)
   pixel[2] = 0;  
 }
 
+void PixelToCoordinates(int *pixel, int *dimensions, double* point)
+{
+  double dx {0.3/dimensions[0]}, dy {0.3/dimensions[1]};
+  point[0] = -0.15 + dx * pixel[0];
+  point[1] = -0.15 + dy * pixel[1];
+}
+
 int main()
 {
-  int n = 1200;			// Number of pixels per axis
+  int P;
+  cout << "Input the power P for the number of pixels (nbPixel = 2^P)" << endl;
+  cin >> P;
+  int n = pow(2, P);			// Number of pixels per axis
   double xmin {-0.15}, xmax {0.15}; // Field of view
   double ymin {-0.15}, ymax {0.15}; // Field of view
     
   // Read the source file.
   vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-  reader->SetFileName("..//perfused_geometries/Baseline.vtp");
+  reader->SetFileName("../Results/Results50Sims/sim1.vtp");
   reader->Update();  // Needed because of GetScalarRange
   vtkSmartPointer<vtkPolyData> polyData = reader->GetOutput();
 
@@ -68,11 +81,17 @@ int main()
   cout << endl;
 
   
-  for(unsigned int x = 0; x < dims[0]; x++)
+  for(int i = 0; i < dims[0]; i++)
     {
-      for(unsigned int y = 0; y < dims[1]; y++)
+      for(int j = 0; j < dims[1]; j++)
   	{
-  	  pixels[y * dims[0] + x] = 1;   
+	  double point[3];
+	  int pixel[3] = {i,j,0};
+	  PixelToCoordinates(pixel, dims, point);
+	  if (pow(point[0],2) + pow(point[1],2) < pow(0.04 ,2))
+	    pixels[i * dims[0] + j] = 0;
+	  else
+	    pixels[i * dims[0] + j] = 1;   
   	}
     }
 
@@ -87,7 +106,7 @@ int main()
       double x0[3], x1[3];
       points->GetPoint(indices[0], x0);
       points->GetPoint(indices[1], x1);
-      double dt = 1e-4;
+      double dt = 1e-5;
       for (double t = 0; t<=1; t+=dt)
 	{
 	  double x[3] = {(1-t)*x0[0] + t*x1[0], (1-t)*x0[1] + t*x1[1], 0};
@@ -97,6 +116,16 @@ int main()
 	}
     }
   
+  vtkSmartPointer<vtkImageDilateErode3D> dilateErode = vtkSmartPointer<vtkImageDilateErode3D>::New();
+  dilateErode->SetInputData(imageData);
+  dilateErode->SetDilateValue(0);
+  dilateErode->SetErodeValue(1);
+  dilateErode->SetKernelSize(2,2,1);
+  dilateErode->Update();
+  imageData = dilateErode->GetOutput();
+
+  double *spacingDT = imageData->GetSpacing();
+  cout << "Dilate Filter spacings: " << spacingDT[0] << ' ' << spacingDT[1] << ' ' << spacingDT[2] << endl;  
   vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
   writer->SetFileName("Test.vti");
   writer->SetInputData(imageData);
@@ -111,6 +140,9 @@ int main()
   dtFilter->SetInputData(imageData);
   dtFilter->Update();
 
+  spacingDT = dtFilter->GetOutput()->GetSpacing();
+  cout << "DT Filter spacings: " << spacingDT[0] << ' ' << spacingDT[1] << ' ' << spacingDT[2] << endl;
+
   cout << "Created the filter" << endl;
   
   vtkSmartPointer<vtkImageData> distanceMap = vtkSmartPointer<vtkImageData>::New();
@@ -124,6 +156,28 @@ int main()
   scaler->Update();
 
   distanceMap = scaler->GetOutput();
+  distanceMap->SetSpacing(spacing);
+  spacingDT = distanceMap->GetSpacing();
+  cout << "Distance map spacings: " << spacingDT[0] << ' ' << spacingDT[1] << ' ' << spacingDT[2] << endl;
+
+  // Compute average intercapillary distance
+  // pixels = static_cast<unsigned char *>(distanceMap->GetScalarPointer());
+  double ICD = 0;
+  int count = 0;
+  for(int i = 0; i < dims[0]; i++)
+    {
+      for(int j = 0; j < dims[1]; j++)
+  	{
+	  float dist = distanceMap->GetScalarComponentAsFloat(i,j,0,0);
+	  if (dist > 0)
+	    {
+	      ICD += dist;
+	      count++;
+	    }
+  	}
+    }
+  
+  cout << "ICD: " << ICD/count << " with " << count << " pixels counted." << endl;
   
   writer->SetFileName("DistanceMap.vti");
   writer->SetInputData(distanceMap);
