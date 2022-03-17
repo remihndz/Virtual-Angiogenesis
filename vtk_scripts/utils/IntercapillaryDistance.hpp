@@ -26,9 +26,9 @@ void PixelToCoordinates(int *pixel, int *dimensions, double* point, double *boun
 cv::Mat convertVtkImageDataToCVMat(const vtkSmartPointer<vtkImageData> &vtkImage);
 
 // Function to compute intercapillary distance from a polydata structure double IntercapillaryDistance(const vtkSmartPointer<vtkPolyData> polyData); // For a FOV of 3mm and pixels=512
-double IntercapillaryDistance(const vtkSmartPointer<vtkPolyData> tree, double *FOV);
-double IntercapillaryDistance(const vtkSmartPointer<vtkPolyData> tree, double *FOV, int resolution);
+double IntercapillaryDistance(const vtkSmartPointer<vtkPolyData> tree, double FOV, int resolution);
+double IntercapillaryDistance(const vtkSmartPointer<vtkPolyData> tree, double FOV);
 // To compute intercapillary distance from a .vtp file
-double IntercapillaryDistance(const char *, int resolution);
-double IntercapillaryDistance(const char *);
+double IntercapillaryDistance(const char * fileNameVTP, double FOV, int resolution);
+double IntercapillaryDistance(const char * fileNameVTP, double FOV);
 

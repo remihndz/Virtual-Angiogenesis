@@ -1,4 +1,4 @@
-#include<IntercapillaryDistance.h>
+#include<IntercapillaryDistance.hpp>
 
 // Functions to get pixels corresponding to x,y,z coordinates et vice-versa
 void CoordinatesToPixel(double *point, int *dimensions, int* pixel)
@@ -58,26 +58,26 @@ double IntercapillaryDistance(const vtkSmartPointer<vtkPolyData> tree, double FO
 			 ymin, ymax,
 			 -0.15, 0.15);
   double *bounds = boundingBox->GetBounds();
-  double spacing[3] = {(bounds[1]-bounds[0])/n, (bounds[3]-bounds[2])/n, 1};
-
+  double spacing[3] = {(bounds[1]-bounds[0])/resolution, (bounds[3]-bounds[2])/resolution, 1};
 
   vtkSmartPointer<vtkClipPolyData> clipper = vtkSmartPointer<vtkClipPolyData>::New();
   clipper->SetInputData(tree);
   clipper->SetClipFunction(boundingBox);
   clipper->SetInsideOut(true);
   clipper->Update();
+  vtkSmartPointer<vtkPolyData> clippedTree = clipper->GetOutput();
   
   vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
-  int *dims = dimensions;
-  dims[0] = n;
-  dims[1] = n;
-  dims[2] = 1;
+  int *dims = new int[3]{resolution, resolution, 1};
+  // dims[0] = resolution;
+  // dims[1] = resolution;
+  // dims[2] = 1;
   imageData->SetDimensions(dims);
   imageData->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
-
+  
   // Create a black canvas and print the tree in white on it
   unsigned char *pixels = static_cast<unsigned char *>(imageData->GetScalarPointer());
-
+  
   // int extent[6];
   // imageData->GetExtent(extent);
   // cout << "Image extent: ";
@@ -103,21 +103,97 @@ double IntercapillaryDistance(const vtkSmartPointer<vtkPolyData> tree, double FO
 	  //  pixels[i * dims[0] + j] = backgroundPixel;   
 	}
     }
-  
-  vtkSmartPointer<vtkPoints> points = clipper->GetOutput()->GetPoints();
-  vtkSmartPointer<vtkCellArray> lines = clipper->GetOutput()->GetLines();
+ 
+  vtkSmartPointer<vtkPoints> points = clippedTree->GetPoints();
+  vtkSmartPointer<vtkCellArray> lines = clippedTree->GetLines();
   vtkIdType *indices;
   vtkIdType numberOfPoints;
   unsigned int lineCount = 0;
   for (lines->InitTraversal(); lines->GetNextCell(numberOfPoints, indices); lineCount++)
     {
       // Set pixels on the line as foreground
-      double* x0, x1;
+      double *x0 = new double[3];
+      double *x1 = new double[3];
       points->GetPoint(indices[0], x0);
       points->GetPoint(indices[1], x1);
-      double dt = 1e-5;
-      for (double t = 0
-      
+      double dt = 1e-3;
+      for (double t = 0; t<=1; t+=dt)
+	{
+	  double *x  = new double[3] {(1-t)*x0[0] + t*x1[0], (1-t)*x0[1] + t*x1[1], 0};
+	  int *pixel = new int[3];
+	  CoordinatesToPixel(x, dims, pixel);
+	  pixels[pixel[1]*dims[0] + pixel[0]] = foregroundPixel;
+	}
+    }
+  
+  vtkSmartPointer<vtkImageDilateErode3D> dilateErode = vtkSmartPointer<vtkImageDilateErode3D>::New();
+  dilateErode->SetInputData(imageData);
+  dilateErode->SetDilateValue(0);
+  dilateErode->SetErodeValue(1);
+  dilateErode->SetKernelSize(2,2,1);
+  dilateErode->Update();
+  
+  // vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
+  // writer->SetFileName("Test.vti");
+  // writer->SetInputConnection(dilateErode->GetOutputPort());
+  // writer->Write();
+
+
+  // Compute the distance map using openCV
+  cv::Mat bwImage = convertVtkImageDataToCVMat(dilateErode->GetOutput());
+  // cv::imshow("Black Background Image", bwImage);
+  cv::Mat dist;
+  cv::distanceTransform(bwImage, dist, cv::DIST_L2, 3); // The last number is the mask size. Use 5 for more precise calculations
+  // Normalize the distance image for range = {0.0, 1.0}
+  // so we can visualize and threshold it
+  cv::normalize(dist, dist, 0, 1.0, cv::NORM_MINMAX);
+  // cv::imshow("Distance Transform Image", dist);
+  // Threshold to obtain the peaks
+  // This will be the markers for the foreground objects
+  cv::threshold(dist, dist, 0.4, 1.0, cv::THRESH_BINARY);
+  // Dilate a bit the dist image
+  cv::Mat kernel1 = cv::Mat::ones(3, 3, CV_8U);
+  cv::dilate(dist, dist, kernel1);
+  // cv::imshow("Dilated Distance map", dist);
+  // cv::waitKey(0); // Makes the plots if any
+
+  // Compute mean ICD
+  cv::Scalar ICD = cv::mean(dist);
+  cout << "Intercapillary distance for the current tree: " << ICD[0] << endl;
+  
+  return ICD[0];
+}
+
+double IntercapillaryDistance(const vtkSmartPointer<vtkPolyData> tree, double FOV)
+{
+  int resolution = 1024;
+  double ICD = IntercapillaryDistance(tree, FOV, resolution);
+  return ICD;
+}
   
 // To compute intercapillary distance from a .vtp file
-double IntercapillaryDistance(const char *);
+double IntercapillaryDistance(const char *fileNameVTP, double FOV, int resolution)
+{
+  vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
+  reader->SetFileName(fileNameVTP);
+  reader->Update();
+  vtkSmartPointer<vtkPolyData> polyData = reader->GetOutput();
+  cout << "Polydata loaded." << endl;
+  double ICD;
+  ICD = IntercapillaryDistance(polyData, FOV, resolution);
+  return ICD;
+}
+ 
+double IntercapillaryDistance(const char *fileNameVTP, double FOV)
+{
+  int resolution = 1024;
+  vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
+  reader->SetFileName(fileNameVTP);
+  reader->Update();
+  vtkSmartPointer<vtkPolyData> polyData = reader->GetOutput();
+  double ICD;
+  ICD = IntercapillaryDistance(polyData, FOV, resolution);
+  return ICD;
+}
+
+

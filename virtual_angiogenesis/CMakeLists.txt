@@ -8,7 +8,14 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # add all libraries needed for compilation
-set(VTK_8_1_libs vtkCommonCore-8.1 vtkCommonDataModel-8.1 vtkCommonExecutionModel-8.1 vtkFiltersModeling-8.1 vtkIOCore-8.1 vtkIOLegacy-8.1 vtkIOXML-8.1 vtkIOGeometry-8.1 vtkInfovisCore-8.1 vtkFiltersGeneral-8.1 vtkFiltersCore-8.1 vtkCommonTransforms-8.1 vtkIOXMLParser-8.1)
+set(VTK_8_1_libs vtkCommonCore-8.1 vtkCommonDataModel-8.1 vtkCommonExecutionModel-8.1 vtkFiltersModeling-8.1 vtkIOCore-8.1 vtkIOLegacy-8.1 vtkIOXML-8.1 vtkIOGeometry-8.1 vtkInfovisCore-8.1 vtkFiltersGeneral-8.1 vtkFiltersCore-8.1 vtkCommonTransforms-8.1 vtkIOXMLParser-8.1 vtkImagingMorphological-8.1)
+
+# The functions to compute metrics to stop the tree generation
+set(SOURCE_EXE ../vtk_scripts/utils/IntercapillaryDistance.cpp ../vtk_scripts/utils/IntercapillaryDistance.hpp)
+set(UTILS_INCLUDE_DIR /home/remi/Desktop/PhD/Virtual-Angiogenesis/vtk_scripts/utils/)
+include_directories(${UTILS_INCLUDE_DIR})
+
+find_package(OpenCV REQUIRED)
 
 find_path(VITA_INCLUDE_DIRS core/GeneratorData.h
           HINTS .. ENV VITA_PATH
@@ -27,12 +34,18 @@ link_directories(${VITA_LIBRARY_DIRS} ${VTK_LIBRARY_DIRS})
 
 # add the executable
 add_executable(dcco_svp dcco_svp.cpp)
+add_executable(SingleStageGrowth SingleStageGrowth.cpp ${SOURCE_EXE})
 
 # link libraries
 target_link_libraries(dcco_svp VItA ${VTK_8_1_libs})
+target_link_libraries(SingleStageGrowth VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
 
 # add all include directories needed for compilation
 target_include_directories(dcco_svp PUBLIC
-                           "${VITA_INCLUDE_DIRS}"
-                           "${VTK_INCLUDE_DIRS}"
-                           )
+  "${VITA_INCLUDE_DIRS}"
+  "${VTK_INCLUDE_DIRS}"
+  )
+target_include_directories(SingleStageGrowth PUBLIC
+  "${VITA_INCLUDE_DIRS}"
+  "${VTK_INCLUDE_DIRS}"
+  )
