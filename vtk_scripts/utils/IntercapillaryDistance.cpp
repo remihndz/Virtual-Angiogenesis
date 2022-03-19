@@ -159,7 +159,7 @@ double IntercapillaryDistance(const vtkSmartPointer<vtkPolyData> tree, double FO
 
   // Compute mean ICD
   cv::Scalar ICD = cv::mean(dist);
-  cout << "Intercapillary distance for the current tree: " << ICD[0] << endl;
+  // cout << "Intercapillary distance for the current tree: " << ICD[0] << endl;
   
   return ICD[0];
 }

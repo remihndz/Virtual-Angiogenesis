@@ -1,5 +1,6 @@
 // My libs
 #include<IntercapillaryDistance.hpp>
+#include<VascularIndexes.hpp>
 
 // STD Libs
 #include<cmath>
@@ -104,7 +105,14 @@ void Vascularise(string output_filename, string rootTreeFilename, string Hull,
   cout << "Finished generating the tree.\n\n\n\n\n\n\n\n\n\n\n\n\n" << endl;
 
   vtkSmartPointer<vtkPolyData> treePolyData = tree->getVtkTree();
-  bool isCriterionReached = targetICD>IntercapillaryDistance(treePolyData, 0.3, 1024);
+  // bool isCriterionReached = targetICD>IntercapillaryDistance(treePolyData, 0.3, 1024);
+  cout << "Intercapillary Distance  |" << IntercapillaryDistance(tree->getVtkTree(), 0.3, 512) << endl;
+  cout << "Vessel Area Density      |" << VesselAreaDensity(tree->getVessels()) << endl;
+  cout << "Vessel Skeleton Density  |" << VesselSkeletonDensity(tree->getVessels()) << endl;
+  cout << "Vessel Perimeter Index   |" << VesselPerimeterIndex(tree->getVessels()) << endl;
+  cout << "Vessel Complexity Index  |" << VesselComplexityIndex(tree->getVessels()) << endl;
+  cout << "Vessel Diameter Index    |" << VesselDiameterIndex(tree->getVessels()) << endl;
+  
   double dLim = treeGenerator->getDLim();
   stagedDomain = new StagedDomain();
   stagedDomain->addStage(50, domain);
@@ -134,8 +142,14 @@ void Vascularise(string output_filename, string rootTreeFilename, string Hull,
     {
       diameterFile << levels[i] << ' ' << means[i] << ' ' << stds[i] << endl;
     }
-  
   diameterFile.close();
+
+  cout << "Intercapillary Distance  |" << IntercapillaryDistance(tree->getVtkTree(), 0.3, 512) << endl;
+  cout << "Vessel Area Density      |" << VesselAreaDensity(tree->getVessels()) << endl;
+  cout << "Vessel Skeleton Density  |" << VesselSkeletonDensity(tree->getVessels()) << endl;
+  cout << "Vessel Perimeter Index   |" << VesselPerimeterIndex(tree->getVessels()) << endl;
+  cout << "Vessel Complexity Index  |" << VesselComplexityIndex(tree->getVessels()) << endl;
+  cout << "Vessel Diameter Index    |" << VesselDiameterIndex(tree->getVessels()) << endl;
 
 }
 
