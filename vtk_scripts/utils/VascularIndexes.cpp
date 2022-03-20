@@ -2,7 +2,7 @@
 
 
 
-double VesselSkeletonDensity(vector<SingleVessel *> Vessels, double domainAreaInCm, int ignoreUpToStage)
+double VesselSkeletonDensity(const vector<SingleVessel *> Vessels, double domainAreaInCm, int ignoreUpToStage)
 {
   double totalSkeletonLength {0.0};
   for (auto v: Vessels)
@@ -14,7 +14,7 @@ double VesselSkeletonDensity(vector<SingleVessel *> Vessels, double domainAreaIn
   return totalSkeletonLength/domainAreaInCm * 1e-4; // Converting in micron^-1
 }
 
-double VesselComplexityIndex(vector<SingleVessel *>Vessels, double domainAreaInCm, int ignoreUpToStage)
+double VesselComplexityIndex(const vector<SingleVessel *>Vessels, double domainAreaInCm, int ignoreUpToStage)
 {
   double totalPerimeter {0.0}, totalArea{0.0};
   for (auto v: Vessels)
@@ -29,7 +29,7 @@ double VesselComplexityIndex(vector<SingleVessel *>Vessels, double domainAreaInC
   return pow(totalPerimeter,2)/(4.0*totalArea*M_PI)/1.5711; // Normalized as in Chu 2016
 }
 
-double VesselAreaDensity(vector<SingleVessel *>Vessels, double domainAreaInCm, int ignoreUpToStage)
+double VesselAreaDensity(const vector<SingleVessel *>Vessels, double domainAreaInCm, int ignoreUpToStage)
 {
   double totalArea {0.0};
   for (auto v: Vessels)
@@ -40,7 +40,7 @@ double VesselAreaDensity(vector<SingleVessel *>Vessels, double domainAreaInCm, i
   return totalArea/domainAreaInCm;
 }
 
-double VesselPerimeterIndex(vector<SingleVessel *>Vessels, double domainAreaInCm, int ignoreUpToStage)
+double VesselPerimeterIndex(const vector<SingleVessel *>Vessels, double domainAreaInCm, int ignoreUpToStage)
 // Note: this is twice the vessel skeleton density
 {
   double totalPerimeter {0.0};
@@ -53,7 +53,7 @@ double VesselPerimeterIndex(vector<SingleVessel *>Vessels, double domainAreaInCm
 }
 
 
-double VesselDiameterIndex(vector<SingleVessel *> Vessels, double domainAreaInCm, int ignoreUpToStage)
+double VesselDiameterIndex(const vector<SingleVessel *> Vessels, double domainAreaInCm, int ignoreUpToStage)
 {
   double totalLength {0.0}, totalArea {0.0};
   for (auto v: Vessels)
