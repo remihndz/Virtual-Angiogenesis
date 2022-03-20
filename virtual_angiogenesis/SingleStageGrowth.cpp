@@ -93,7 +93,7 @@ void Vascularise(string output_filename, string rootTreeFilename, string Hull,
   long long int nTermTotal = nTerm + tree->getNTerms();
   
   StagedFRROTreeGenerator *treeGenerator = new StagedFRROTreeGenerator(stagedDomain, tree,
-									nTermTotal,
+								       nTermTotal,
 								       {gam},
 								       {delta},
 								       {eta});
@@ -102,28 +102,73 @@ void Vascularise(string output_filename, string rootTreeFilename, string Hull,
   
   cout << "Starting tree generation." << endl;
   tree = {(SingleVesselCCOOTree *) treeGenerator->resume(200, "./")};
-  cout << "Finished generating the tree.\n\n\n\n\n\n\n\n\n\n\n\n\n" << endl;
 
-  vtkSmartPointer<vtkPolyData> treePolyData = tree->getVtkTree();
-  // bool isCriterionReached = targetICD>IntercapillaryDistance(treePolyData, 0.3, 1024);
-  cout << "Intercapillary Distance  |" << IntercapillaryDistance(tree->getVtkTree(), 0.3, 512) << endl;
-  cout << "Vessel Area Density      |" << VesselAreaDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
-  cout << "Vessel Skeleton Density  |" << VesselSkeletonDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
-  cout << "Vessel Perimeter Index   |" << VesselPerimeterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
-  cout << "Vessel Complexity Index  |" << VesselComplexityIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
-  cout << "Vessel Diameter Index    |" << VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
   
-  double dLim = treeGenerator->getDLim();
-  stagedDomain = new StagedDomain();
-  stagedDomain->addStage(50, domain);
-  nTermTotal = nTermTotal+50;
-  treeGenerator = new StagedFRROTreeGenerator(stagedDomain, tree,
-					      nTermTotal,
-					      {gam},
-					      {delta},
-					      {eta});
-  tree = {(SingleVesselCCOOTree *) treeGenerator->resume(200, "./")};
+  vtkSmartPointer<vtkPolyData> treePolyData = tree->getVtkTree();
+  // bool isCriterionReached = ( targetICD>IntercapillaryDistance(treePolyData, 0.3, 1024) );
+  // cout << "Intercapillary Distance  |" << IntercapillaryDistance(tree->getVtkTree(), 0.3, 512) << endl;
+  // cout << "Vessel Area Density      |" << VesselAreaDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
+  // cout << "Vessel Skeleton Density  |" << VesselSkeletonDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
+  // cout << "Vessel Perimeter Index   |" << VesselPerimeterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
+  // cout << "Vessel Complexity Index  |" << VesselComplexityIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
+  // cout << "Vessel Diameter Index    |" << VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
+
+  vector<vector<double>> metricsObserver;
+
+  {
+    vector<double> metrics;
+    metrics.push_back(tree->getNTerms()); 
+    metrics.push_back(treeGenerator->getDLim());
+    metrics.push_back(tree->computeTreeCost(tree->getRoot()));
+    metrics.push_back(( tree->getConnectivity() ).size()); 
+    metrics.push_back(IntercapillaryDistance(tree->getVtkTree(), 0.3, 512));
+    metrics.push_back(VesselAreaDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+    metrics.push_back(VesselSkeletonDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+    metrics.push_back(VesselPerimeterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+    metrics.push_back(VesselComplexityIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+    metrics.push_back(VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
     
+    metricsObserver.push_back(metrics);
+    // metrics.empty();
+  }
+  
+  for (int i = 0; i < 10; i++)
+    {
+      double dLim = treeGenerator->getDLim();
+      stagedDomain = new StagedDomain();
+      stagedDomain->addStage(50, domain);
+      nTermTotal = nTermTotal+50;
+      treeGenerator = new StagedFRROTreeGenerator(stagedDomain, tree,
+						  nTermTotal,
+						  {gam},
+						  {delta},
+						  {eta});
+      tree = {(SingleVesselCCOOTree *) treeGenerator->resume(200, "./")};
+
+      // cout << "Intercapillary Distance  |" << IntercapillaryDistance(tree->getVtkTree(), 0.3, 512) << endl;
+      // cout << "Vessel Area Density      |" << VesselAreaDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
+      // cout << "Vessel Skeleton Density  |" << VesselSkeletonDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
+      // cout << "Vessel Perimeter Index   |" << VesselPerimeterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
+      // cout << "Vessel Complexity Index  |" << VesselComplexityIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
+      // cout << "Vessel Diameter Index    |" << VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
+      // cout << "Area of the domain       |" << 0.09-pow(0.04, 2)*M_PI << endl;
+
+      vector<double> metrics;
+      metrics.push_back(tree->getNTerms()); 
+      metrics.push_back(treeGenerator->getDLim());
+      metrics.push_back(tree->computeTreeCost(tree->getRoot()));
+      metrics.push_back(( tree->getConnectivity() ).size()); 
+      metrics.push_back(IntercapillaryDistance(tree->getVtkTree(), 0.3, 512));
+      metrics.push_back(VesselAreaDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+      metrics.push_back(VesselSkeletonDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+      metrics.push_back(VesselPerimeterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+      metrics.push_back(VesselComplexityIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+      metrics.push_back(VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+      
+      metricsObserver.push_back(metrics);
+      // metrics.clear();
+    }
+
   cout << "Saving the results..." << endl;
 
   tree->save(output_filename + ".cco");  
@@ -137,23 +182,25 @@ void Vascularise(string output_filename, string rootTreeFilename, string Hull,
   // Load the vectors with levels and the diameter for each vessel
   statsManager->getMeanPerLevel(&levels, &means, &stds, att);
   string fileName = output_filename + "_diameters.dat";
-  ofstream diameterFile(fileName);
+  ofstream outputFile(fileName);
   for (int i = 0; i<levels.size(); i++)
     {
-      diameterFile << levels[i] << ' ' << means[i] << ' ' << stds[i] << endl;
+      outputFile << levels[i] << ' ' << means[i] << ' ' << stds[i] << endl;
     }
-  diameterFile.close();
+  outputFile.close();
 
-  cout << "Intercapillary Distance  |" << IntercapillaryDistance(tree->getVtkTree(), 0.3, 512) << endl;
-  cout << "Vessel Area Density      |" << VesselAreaDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
-  cout << "Vessel Skeleton Density  |" << VesselSkeletonDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
-  cout << "Vessel Perimeter Index   |" << VesselPerimeterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
-  cout << "Vessel Complexity Index  |" << VesselComplexityIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
-  cout << "Vessel Diameter Index    |" << VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI) << endl;
-  cout << "Area of the domain       |" << 0.09-pow(0.04, 2)*M_PI << endl;
-
+  // Save the metrics at each stage
+  fileName = output_filename + "_metrics.dat";
+  outputFile.open(fileName);
+  outputFile << "# NTerms DLim TreeCost NVessels ICD VAD VSD VPI VCI VDI" << endl;
+  for (auto e: metricsObserver)
+    {
+      for (int j = 0; j < e.size(); j++)
+	outputFile << e[j] << ' ';
+      outputFile << endl;
+    }
+  outputFile.close();
 }
-
 
 int main(int argc, char *argv[])
 {
