@@ -171,7 +171,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
       metrics.push_back(VesselComplexityIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
       metrics.push_back(VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));    
       metricsObserver.push_back(metrics);
-    }   while ((metricsObserver[metricsObserver.size()-1][4] > targetICD) and (iter < 12));
+    }   while ((metricsObserver[metricsObserver.size()-1][4] > targetICD) and (iter < 20));
 
   // Get the diameter by branching order
   ObjectTreeStatsManager *statsManager = new ObjectTreeStatsManager(tree);
