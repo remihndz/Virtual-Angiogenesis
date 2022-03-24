@@ -10,7 +10,13 @@ import matplotlib.pyplot as plt
 
 def IntercapillaryDistanceMap(filename, plotResult=False):
 
+    threshold = 0
+    if filename[-4:] == '.tif':
+        threshold = 50          # Threshold value that gives a VAD~0.5
+        
     img = ImageOps.grayscale(Image.open(filename))
+    img = img.point( lambda p: 255 if p > threshold else 0)
+    img.convert('1')
     # Crop the image to the edges of the FOV
     imgBox = img.getbbox()
     img = np.array(img.crop(imgBox))
@@ -25,7 +31,7 @@ def IntercapillaryDistanceMap(filename, plotResult=False):
     
     if plotResult:
         plt.subplot(121)
-        plt.imshow(erodedImg)
+        plt.imshow(erodedImg, cmap='gray')
         
         plt.subplot(122)
         plt.imshow(D, cmap='hot')
