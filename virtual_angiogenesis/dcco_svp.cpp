@@ -139,10 +139,10 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   // Add additional vessels until criterion is reached
   double targetICD = 0.022;
   int iter = 1;
-  while (metricsObserver[metricsObserver.size()-1][4] < targetICD)
+  do
     {
       cout << "Current ICD: " << metricsObserver[metricsObserver.size()-1][4] << endl << endl;
-      int n = 50;		// Increment to the number of terminal vessels
+      int n = 80;		// Increment to the number of terminal vessels
       delete stagedDomain;
       stagedDomain = new StagedDomain();
       stagedDomain->addStage(n, domain);
@@ -156,6 +156,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
       string fileName = outputFileName + to_string(iter) + ".cco";
       tree->save(fileName);
       cout << "Saving checkpoint in " << fileName << endl;
+      iter++;
       
       vtkSmartPointer<vtkPolyData> treePolyData = tree->getVtkTree();
       vector<double> metrics;
@@ -170,7 +171,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
       metrics.push_back(VesselComplexityIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
       metrics.push_back(VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));    
       metricsObserver.push_back(metrics);
-    }
+    }   while ((metricsObserver[metricsObserver.size()-1][4] > targetICD) and (iter < 12));
 
   // Get the diameter by branching order
   ObjectTreeStatsManager *statsManager = new ObjectTreeStatsManager(tree);
@@ -190,7 +191,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   // Save the metrics at each stage
   fileName = outputFileName + "_metrics.dat";
   outputFile.open(fileName);
-  outputFile << "# NTerms DLim TreeCost NVessels ICD VAD VSD VPI VCI VDI" << endl;
+  outputFile << "NTerms DLim TreeCost NVessels ICD VAD VSD VPI VCI VDI" << endl;
   for (auto e: metricsObserver)
     {
       for (int j = 0; j < e.size(); j++)
