@@ -40,6 +40,29 @@ def IntercapillaryDistanceMap(filename, plotResult=False):
 
     return D
 
+def VesselDensityForOCTA(filename, plotResult=False, threshold=50):
+        
+    img = ImageOps.grayscale(Image.open(filename))
+    img = img.point( lambda p: 1 if p > threshold else 0)
+    img.convert('1')
+    # # Crop the image to the edges of the FOV
+    imgBox = img.getbbox()
+    img = np.array(img.crop(imgBox))
+
+    # # Erode
+    kernel = np.ones((2,2), np.uint8)
+    erodedImg = cv.erode(img, kernel, iterations=1)
+
+    # Compute VAD
+
+    if plotResult:
+        plt.imshow(img, cmap='gray')
+        plt.show()
+    pix = np.array(img)         # Convert to an array
+    VAD = pix.mean()
+
+    return VAD
+
 
 
 
@@ -159,3 +182,4 @@ def FractalDimension(img, threshold=15.0):
     plt.legend()
     plt.show()
     return
+
