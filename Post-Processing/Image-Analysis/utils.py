@@ -184,20 +184,73 @@ def FractalDimension(img, threshold=15.0):
     plt.show()
     return -D
 
-def LocalFractalDimensionMap(img, w=1):
 
-    m,n = img.shape[0], img.shape[1]
-    LFDMap = np.zeros((m,n)) # Local fractal dimension map
-                      
-    window = w
-    paddedImg = np.pad(img, ((window, window),(w,w),(0,0)), mode='constant', constant_values=0) # Add 0s to the edges of the image
-    n,m=1,1
-    for i in range(window, m+window):
-        for j in range(window, window+n):
-            localImg = paddedImg[i-window:i+window+1,j-window:j+window+1, :]
-            LFDMap[i-window,j-window] = FractalDimensionForParaviewScreenShot(localImg, threshold=0, plot=False)
-            
+
+def FractalDimensionMap(img, w, threshold=0.0):
     
-    plt.imshow(LFDMap)
+    # Only for grayscale images
+    if len(img.shape)>2:
+        R, G, B = img[:,:,0], img[:,:,1], img[:,:,2]
+        imgGray = 0.2989 * R + 0.5870 * G + 0.1140 * B
+        img = imgGray
+
+    # Transform img into a binary array
+    img = (img > threshold).astype(int) # Vessels in black, background in white
+    # plt.imshow(img, cmap=plt.cm.gray_r)
+    # plt.show()
+
+    # From https://github.com/rougier/numpy-100 (#87)
+    def boxcount(img, k):
+        S = np.add.reduceat(
+            np.add.reduceat(img, np.arange(0, img.shape[0], k), axis=0),
+            np.arange(0, img.shape[1], k), axis=1)
+        
+        # We count non-empty (0) and non-full boxes (k*k)
+        return len(np.where((S > 0) & (S < k*k))[0])
+
+    def LocalFractalDimension(localImg):
+        if not np.any(localImg):
+            return 0
+        # Minimal dimension of image
+        p = min(localImg.shape)
+    
+        # Greatest power of 2 less than or equal to p
+        n = 2**np.floor(np.log(p)/np.log(2))
+
+        # Extract the exponent
+        n = int(np.log(n)/np.log(2))
+        
+        # Build successive box sizes (from 2**n down to 2**1)
+        sizes = 2**np.arange(n, 0, -1)
+
+        # Actual box counting with decreasing size
+        counts = []
+        for size in sizes:
+            counts.append(boxcount(localImg, size))
+        
+        # Fit the successive log(sizes) with log (counts)
+        coeffs = np.polyfit(np.log(sizes), np.log(counts), 1)
+        D = coeffs[0]
+        if np.isnan(D):
+            return 0
+        if D > 0:
+            return 0
+        return -D
+
+    
+    # Compute local map for each pixel
+    FDMap = np.zeros_like(img)
+    paddedImg = np.pad(img, ((w, w),), mode='constant', constant_values=0)
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            k,l = i+w, j+w
+            localImg = paddedImg[k-w:k+w+1, l-w:l+w+1]
+            FDMap[i,j] = LocalFractalDimension(localImg)
+
+    plt.subplot(121)
+    plt.imshow(FDMap)
+    plt.colorbar()
+    plt.subplot(122)
+    plt.imshow(img)
     plt.show()
-    return 
+    return FDMap
