@@ -137,7 +137,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   domain->setIsConvexDomain(false);
   domain->setMinBifurcationAngle(theta_min);
   // Add additional vessels until criterion is reached
-  double targetICD = 0.022;
+  double targetICD = 0.020;
   int iter = 1;
   do
     {
@@ -171,7 +171,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
       metrics.push_back(VesselComplexityIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
       metrics.push_back(VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));    
       metricsObserver.push_back(metrics);
-    }   while ((metricsObserver[metricsObserver.size()-1][4] > targetICD) and (iter < 20));
+    }   while ((metricsObserver[metricsObserver.size()-1][4] > targetICD) and (iter < 40));
 
   // Get the diameter by branching order
   ObjectTreeStatsManager *statsManager = new ObjectTreeStatsManager(tree);

@@ -108,9 +108,9 @@ def FractalDimensionForParaviewScreenShot(img, threshold=0.0, plot=False):
     coeffs = np.polyfit(np.log(sizes), np.log(counts), 1)
     D = coeffs[0]
     
-    print("Minkowski–Bouligand dimension (computed): ", -D)
-
     if plot:
+        print("Minkowski–Bouligand dimension (computed): ", -D)
+            
         plt.figure(1)
         plt.imshow(img, cmap=plt.cm.gray_r)
         plt.title(f'Binarized image with threshold {threshold:1.2f}')
@@ -170,6 +170,7 @@ def FractalDimension(img, threshold=15.0):
         counts.append(boxcount(img, size))
         
     # Fit the successive log(sizes) with log (counts)
+    print(sizes, counts)
     coeffs = np.polyfit(np.log(sizes), np.log(counts), 1)
     D = coeffs[0]
     
@@ -181,5 +182,22 @@ def FractalDimension(img, threshold=15.0):
     plt.title(f'Minkowski-Bouligand dimension: {-D:1.2f}')
     plt.legend()
     plt.show()
-    return
+    return -D
 
+def LocalFractalDimensionMap(img, w=1):
+
+    m,n = img.shape[0], img.shape[1]
+    LFDMap = np.zeros((m,n)) # Local fractal dimension map
+                      
+    window = w
+    paddedImg = np.pad(img, ((window, window),(w,w),(0,0)), mode='constant', constant_values=0) # Add 0s to the edges of the image
+    n,m=1,1
+    for i in range(window, m+window):
+        for j in range(window, window+n):
+            localImg = paddedImg[i-window:i+window+1,j-window:j+window+1, :]
+            LFDMap[i-window,j-window] = FractalDimensionForParaviewScreenShot(localImg, threshold=0, plot=False)
+            
+    
+    plt.imshow(LFDMap)
+    plt.show()
+    return 

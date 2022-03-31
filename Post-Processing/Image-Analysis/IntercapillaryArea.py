@@ -6,7 +6,7 @@ import numpy as np
 
 assert(len(sys.argv)>1)
 
-plotResults = False
+plotResults = True
 count = 0
 means, variances = [], []
 for filename in sys.argv[1:]:

@@ -12,7 +12,7 @@ set(VTK_8_1_libs vtkCommonCore-8.1 vtkCommonDataModel-8.1 vtkCommonExecutionMode
 
 # The functions to compute metrics to stop the tree generation
 set(SOURCE_EXE ../vtk_scripts/utils/IntercapillaryDistance.cpp ../vtk_scripts/utils/IntercapillaryDistance.hpp ../vtk_scripts/utils/VascularIndexes.cpp ../vtk_scripts/utils/VascularIndexes.hpp)
-set(UTILS_INCLUDE_DIR /home/remi/Desktop/PhD/Virtual-Angiogenesis/vtk_scripts/utils/)
+set(UTILS_INCLUDE_DIR /mnt/c/Users/rhernand/Desktop/MyCodes/Virtual-Angiogenesis/vtk_scripts/utils/)
 include_directories(${UTILS_INCLUDE_DIR})
 
 find_package(OpenCV REQUIRED)
@@ -33,11 +33,11 @@ find_path(VTK_LIBRARY_DIRS libvtkCommonCore-8.1.so
 link_directories(${VITA_LIBRARY_DIRS} ${VTK_LIBRARY_DIRS})
 
 # add the executable
-add_executable(dcco_svp dcco_svp.cpp)
+add_executable(dcco_svp dcco_svp.cpp ${SOURCE_EXE})
 add_executable(SingleStageGrowth SingleStageGrowth.cpp ${SOURCE_EXE})
 
 # link libraries
-target_link_libraries(dcco_svp VItA ${VTK_8_1_libs})
+target_link_libraries(dcco_svp VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
 target_link_libraries(SingleStageGrowth VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
 
 # add all include directories needed for compilation

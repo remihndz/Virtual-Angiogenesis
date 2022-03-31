@@ -103,7 +103,7 @@ def VesselDiameterIndex(vessels, domainAreaInCm=0.09, upToStage=100):
             totalLength += l
             totalArea   += l*2*r
             vesselCount +=1
-    VDI = totalArea/totalLength*1e4 # Convert from cm to micron
+    VDI = (totalArea/totalLength)*1e4 # Convert from cm to micron
     return VDI, vesselCount
 
 def VesselComplexityIndex(vessels, domainAreaInCm=0.09, upToStage=100):
@@ -125,7 +125,7 @@ def VesselComplexityIndex(vessels, domainAreaInCm=0.09, upToStage=100):
             totalPerimeter += l*2
             totalArea      += l*2*r
             vesselCount    +=1
-    VCI = (totalPerimeter**2)/(4*np.pi*totalArea)/1.5711 # Normalized as in Chu 2016
+    VCI = (totalPerimeter**2)/(4*np.pi*totalArea*1.5711) # Normalized as in Chu 2016
     return VCI, vesselCount
 
 def VesselSkeletonDensity(vessels, domainAreaInCm=0.09, upToStage=100):
