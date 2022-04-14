@@ -15,6 +15,12 @@ when computing the ICD.
 import sys, glob
 from sys import platform as _platform
 import vtkmodules.all as vtk
+from skimage.transform import resize
+from skimage.io import imsave
+from skimage import img_as_uint
+from PIL import Image, ImageOps
+import numpy as np
+import matplotlib.pyplot as plt
 
 if _platform=='linux':
     file_names = sys.argv[1:]
@@ -73,7 +79,8 @@ for file_name in file_names:
     
     # Create the RendererWindow
     renderer_window = vtk.vtkRenderWindow()
-    renderer_window.SetSize(640, 480)
+    renderer_window.SetSize(640*2, 480*2)
+    # renderer_window.SetSize(304, 304)
     renderer_window.AddRenderer(renderer)
     
     w2if = vtk.vtkWindowToImageFilter()
@@ -92,3 +99,11 @@ for file_name in file_names:
     # interactor.Start()
 
     print('File ', file_name, 'saved as', file_name_base + '.png')
+
+    img = ImageOps.grayscale(Image.open(file_name_base+'.png'))
+    imgBox = img.getbbox()
+    img = img.crop(imgBox)
+    image = np.array(img).astype(np.uint8)
+    image = resize(image, (304, 304), anti_aliasing=True)
+    imsave(file_name_base + '_resized.png', img_as_uint(image))
+    
