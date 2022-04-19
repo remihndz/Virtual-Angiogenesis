@@ -44,7 +44,7 @@ def FractalDimensionForParaviewScreenShot(img, threshold=0.0, plot=False):
         imgGray = 0.2989 * R + 0.5870 * G + 0.1140 * B
         img = imgGray
         
-
+    
     # From https://github.com/rougier/numpy-100 (#87)
     def boxcount(img, k):
         S = np.add.reduceat(
@@ -163,10 +163,10 @@ def FractalDimensionMap(img, w, threshold=0.0):
 
     # Transform img into a binary array
     img = (img > threshold).astype(int) # Vessels in black, background in white
-    img = img[img.shape[0]/2.
+    img = img[img.shape[0]]/2.
     # plt.imshow(img, cmap=plt.cm.gray_r)
     # plt.show()
-
+              
     
     # From https://github.com/rougier/numpy-100 (#87)
     def boxcount(img, k):
