@@ -10,7 +10,7 @@
 #include<cstdlib>
 #include<vector>
 #include<fstream>
-
+#include<ctime>
 
 // VItA Libs
 #include<structures/tree/AbstractCostEstimator.h>
@@ -138,11 +138,14 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   domain->setMinBifurcationAngle(theta_min);
   // Add additional vessels until criterion is reached
   double targetICD = 0.020;
-  int iter = 1;
+  int iter = 1, iterMax = 50;
+  
   do
     {
+      time_t startTime, endTime;
       cout << "Current ICD: " << metricsObserver[metricsObserver.size()-1][4] << endl << endl;
-      int n = 80;		// Increment to the number of terminal vessels
+      int n = 50;		// Increment to the number of terminal vessels
+
       delete stagedDomain;
       stagedDomain = new StagedDomain();
       stagedDomain->addStage(n, domain);
@@ -150,14 +153,18 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
       delete treeGenerator;
       treeGenerator = new StagedFRROTreeGenerator(stagedDomain, tree, nTermTotal,
 						  {gam}, {delta}, {eta});
-	
-      tree = {(SingleVesselCCOOTree *) treeGenerator->resume(200, "./")};
+ 
+      startTime = time(NULL);
+      tree = {(SingleVesselCCOOTree *) treeGenerator->generate(200, "./")};
+      endTime = time(NULL);
+      cout << "Time for sprouting: " <<  endTime-startTime << endl;
 
-      string fileName = outputFileName + to_string(iter) + ".cco";
-      tree->save(fileName);
+      string fileName = outputFileName + to_string(iter);
+      tree->save(fileName + "cco");
+      tree_writer->write(fileName + ".vtp", tree);
       cout << "Saving checkpoint in " << fileName << endl;
       iter++;
-      
+
       vtkSmartPointer<vtkPolyData> treePolyData = tree->getVtkTree();
       vector<double> metrics;
       metrics.push_back(tree->getNTerms()); 
@@ -171,7 +178,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
       metrics.push_back(VesselComplexityIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
       metrics.push_back(VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));    
       metricsObserver.push_back(metrics);
-    }   while ((metricsObserver[metricsObserver.size()-1][4] > targetICD) and (iter < 40));
+      }   while ((metricsObserver[metricsObserver.size()-1][4] > targetICD) and (iter < iterMax));
 
   // Get the diameter by branching order
   ObjectTreeStatsManager *statsManager = new ObjectTreeStatsManager(tree);
@@ -191,7 +198,8 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   // Save the metrics at each stage
   fileName = outputFileName + "_metrics.dat";
   outputFile.open(fileName);
-  outputFile << "NTerms DLim TreeCost NVessels ICD VAD VSD VPI VCI VDI" << endl;
+  outputFile << "# NTerms DLim TreeCost NVessels ICD VAD VSD VPI VCI VDI" << endl;
+
   for (auto e: metricsObserver)
     {
       for (int j = 0; j < e.size(); j++)
@@ -199,10 +207,8 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
       outputFile << endl;
     }
   outputFile.close();
-
   cout << "Output written in " << outputFileName << "_i.cco and " << outputFileName << "_i.vtp." << endl;
 }
-
 
 
 
