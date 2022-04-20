@@ -119,6 +119,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
     vtkSmartPointer<vtkPolyData> treePolyData = tree->getVtkTree();
     vector<double> metrics;
     metrics.push_back(tree->getNTerms()); 
+    metrics.push_back((tree->getSegments()).size()); 
     metrics.push_back(treeGenerator->getDLim());
     metrics.push_back(tree->computeTreeCost(tree->getRoot()));
     metrics.push_back(( tree->getConnectivity() ).size()); 
@@ -133,11 +134,11 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   cout << "ICD at baseline: " << metricsObserver[0][4] << endl;
 
   // Domain including perifovea and parafovea but not the FAZ
-  DomainNVR *domain = new DomainNVR(Hull, {NVR2.back()}, nDraw, seed, genData);  
+  DomainNVR *domain = new DomainNVR(Hull, {NVR2.back()}, 100, seed, genData);  
   domain->setIsConvexDomain(false);
   domain->setMinBifurcationAngle(theta_min);
   // Add additional vessels until criterion is reached
-  double targetICD = 0.020;
+  double targetICD = 0.020, ICD;  
   int iter = 1;
   do
     {
@@ -153,25 +154,29 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
 	
       tree = {(SingleVesselCCOOTree *) treeGenerator->resume(200, "./")};
 
-      string fileName = outputFileName + to_string(iter) + ".cco";
-      tree->save(fileName);
-      cout << "Saving checkpoint in " << fileName << endl;
+      string fileName = outputFileName + to_string(iter);
+      tree->save(fileName + ".cco");
+      tree_writer->write(fileName + ".vtp", tree);
+      cout << "Saving checkpoint in " << fileName << ".cco/.vtp" <<  endl;
+      ICD = IntercapillaryDistance(tree->getVtkTree(), 0.3, 512);
+      cout << "Current ICD: " << ICD << "/t ICD target: " << targetICD << endl;
       iter++;
       
       vtkSmartPointer<vtkPolyData> treePolyData = tree->getVtkTree();
       vector<double> metrics;
-      metrics.push_back(tree->getNTerms()); 
+      metrics.push_back(tree->getNTerms());
+      metrics.push_back((tree->getSegments()).size()); 
       metrics.push_back(treeGenerator->getDLim());
       metrics.push_back(tree->computeTreeCost(tree->getRoot()));
       metrics.push_back(( tree->getConnectivity() ).size()); 
-      metrics.push_back(IntercapillaryDistance(tree->getVtkTree(), 0.3, 512));
+      metrics.push_back(ICD);
       metrics.push_back(VesselAreaDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
       metrics.push_back(VesselSkeletonDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
       metrics.push_back(VesselPerimeterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
       metrics.push_back(VesselComplexityIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
       metrics.push_back(VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));    
       metricsObserver.push_back(metrics);
-    }   while ((metricsObserver[metricsObserver.size()-1][4] > targetICD) and (iter < 40));
+    }   while ((ICD > targetICD) and (iter < 10));
 
   // Get the diameter by branching order
   ObjectTreeStatsManager *statsManager = new ObjectTreeStatsManager(tree);
@@ -191,7 +196,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   // Save the metrics at each stage
   fileName = outputFileName + "_metrics.dat";
   outputFile.open(fileName);
-  outputFile << "NTerms DLim TreeCost NVessels ICD VAD VSD VPI VCI VDI" << endl;
+  outputFile << "NTerms NSegments DLim TreeCost NVessels ICD VAD VSD VPI VCI VDI" << endl;
   for (auto e: metricsObserver)
     {
       for (int j = 0; j < e.size(); j++)
@@ -332,13 +337,13 @@ int main(int argc, char *argv[])
   // Discretisation of the testing triangle for the bifurcation - Delta nu - Figure 1
   int Delta_nu = 7;
   // Buffer size for random point generation
-  int nDraw {10000};
+  int nDraw {1000};
   // Random seed
   long long int seed {time(nullptr)};
   
   Vascularise(outputFileName, inputCCO, Hull, NVR1, NVR2, nTerms_1, nTerms_2,
-	      gam, delta, eta, nDraw, seed, nFail, l_lim_fr,
-	      perfusion_area_factor, close_neighbourhood_factor, Delta_nu, theta_min);
+  	      gam, delta, eta, nDraw, seed, nFail, l_lim_fr,
+  	      perfusion_area_factor, close_neighbourhood_factor, Delta_nu, theta_min);
     
     delete gam;    
     delete delta;
