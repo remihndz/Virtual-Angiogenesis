@@ -47,8 +47,8 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
 {
   
   // Simulation parameters for each stage
-  // SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
-  VolumetricCostEstimator *FSprout = new VolumetricCostEstimator();
+  SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
+  // VolumetricCostEstimator *FSprout = new VolumetricCostEstimator();
   AbstractCostEstimator *costEstimator = FSprout;
   GeneratorData *genData = new GeneratorData(160, nFail, l_lim_fr, perfusion_area_factor,
 					      close_neighborhood_factor, 0.25, Delta_nu, 0, false,
@@ -113,6 +113,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   tree->save(outputFileName + "_0.cco");  
   tree_writer->write(outputFileName + "_0.vtp", tree);
 
+  double ICD = IntercapillaryDistance(tree->getVtkTree(), 0.3, 512);
 
   vector<vector<double>> metricsObserver;
   {
@@ -123,7 +124,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
     metrics.push_back(treeGenerator->getDLim());
     metrics.push_back(tree->computeTreeCost(tree->getRoot()));
     metrics.push_back(( tree->getConnectivity() ).size()); 
-    metrics.push_back(IntercapillaryDistance(tree->getVtkTree(), 0.3, 512));
+    metrics.push_back(ICD);
     metrics.push_back(VesselAreaDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
     metrics.push_back(VesselSkeletonDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
     metrics.push_back(VesselPerimeterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
@@ -131,21 +132,28 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
     metrics.push_back(VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));    
     metricsObserver.push_back(metrics);
   }
-  cout << "ICD at baseline: " << metricsObserver[0][4] << endl;
+  cout << "ICD at baseline: " << ICD << endl;
 
   // Domain including perifovea and parafovea but not the FAZ
-  DomainNVR *domain = new DomainNVR(Hull, {NVR2.back()}, 100, seed, genData);  
+  // delete FSprout;
+  // delete costEstimator;
+  // delete genData;
+  // SproutingVolumetricCostEstimator *FSproutNew = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
+  // costEstimator = FSproutNew;
+  // genData = new GeneratorData(160, nFail, l_lim_fr, perfusion_area_factor,
+  // 			      close_neighborhood_factor, 0.25, Delta_nu, 0, false,
+  // 			      costEstimator);
+  DomainNVR *domain = new DomainNVR(Hull, {NVR2.back()}, 100, seed, genData);
   domain->setIsConvexDomain(false);
   domain->setMinBifurcationAngle(theta_min);
   // Add additional vessels until criterion is reached
-  double targetICD = 0.020, ICD;
-  int iter = 1, iterMax = 50;
+  double targetICD = 0.0235;
+  int iter = 1, iterMax = 10;
   
   do
     {
       time_t startTime, endTime;
-      cout << "Current ICD: " << metricsObserver[metricsObserver.size()-1][4] << endl << endl;
-      int n = 50;		// Increment to the number of terminal vessels
+      int n = 200;		// Increment to the number of terminal vessels
 
       delete stagedDomain;
       stagedDomain = new StagedDomain();
@@ -156,17 +164,17 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
 						  {gam}, {delta}, {eta});
  
       startTime = time(NULL);
-      tree = {(SingleVesselCCOOTree *) treeGenerator->generate(200, "./")};
-      // tree = {(SingleVesselCCOOTree *) treeGenerator->resume(200, "./")};
+      cout << "Adding " << n << " terminal vessels to the previous tree...." << endl;
+      tree = {(SingleVesselCCOOTree *) treeGenerator->resume(200, "./")};
       endTime = time(NULL);
-      cout << "Time for sprouting: " <<  endTime-startTime << endl;
+      cout << "Time for sprouting: " <<  endTime-startTime << "s for " << nTermTotal << " vessels" << endl;
 
-      string fileName = outputFileName + to_string(iter);
-      tree->save(fileName + "cco");
+      string fileName = outputFileName + "_" + to_string(iter);
+      tree->save(fileName + ".cco");
       tree_writer->write(fileName + ".vtp", tree);
       cout << "Saving checkpoint in " << fileName << ".cco/.vtp" <<  endl;
       ICD = IntercapillaryDistance(tree->getVtkTree(), 0.3, 512);
-      cout << "Current ICD: " << ICD << "/t ICD target: " << targetICD << endl;
+      cout << "Current ICD: " << ICD << "\t ICD target: " << targetICD << endl;
       iter++;
 
       vtkSmartPointer<vtkPolyData> treePolyData = tree->getVtkTree();

@@ -1,7 +1,7 @@
 # Libs for image processing
 from PIL import Image, ImageOps
 from scipy.ndimage import distance_transform_edt
-import cv2 as cv
+import cv2 as cv # Requires opencv-contrib-python for the thinning function
 
 # Other
 import numpy as np
@@ -22,8 +22,11 @@ def IntercapillaryDistanceMap(filename, plotResult=False):
     img = np.array(img.crop(imgBox))
 
     # Erode
-    kernel = np.ones((2,2), np.uint8)
-    erodedImg = cv.erode(img, kernel, iterations=1)
+    # kernel = np.ones((2,2), np.uint8)
+    # erodedImg = cv.erode(img, kernel, iterations=1)
+
+    # Skeletonize (Zheng Suen algorithm)
+    erodedImg = cv.ximgproc.thinning(img)
 
     # Compute distance map
     dHeight, dWidth = 3.0/img.shape[0], 3.0/img.shape[1] # Size of a pixel in mm
@@ -37,7 +40,7 @@ def IntercapillaryDistanceMap(filename, plotResult=False):
         plt.imshow(D, cmap='hot')
         plt.colorbar()
         plt.show()
-
+        
     return D
 
 def VesselDensityForOCTA(filename, plotResult=False, threshold=50):

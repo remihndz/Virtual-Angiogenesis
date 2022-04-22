@@ -141,24 +141,31 @@ double IntercapillaryDistance(const vtkSmartPointer<vtkPolyData> tree, double FO
 
   // Compute the distance map using openCV
   cv::Mat bwImage = convertVtkImageDataToCVMat(dilateErode->GetOutput());
-  // cv::imshow("Black Background Image", bwImage);
+  // cv::Mat skeleton;
+  // thinning(bwImage, skeleton);
   cv::Mat dist;
   cv::distanceTransform(bwImage, dist, cv::DIST_L2, 3); // The last number is the mask size. Use 5 for more precise calculations
   // Normalize the distance image for range = {0.0, 1.0}
   // so we can visualize and threshold it
   cv::normalize(dist, dist, 0, 1.0, cv::NORM_MINMAX);
-  // cv::imshow("Distance Transform Image", dist);
   // Threshold to obtain the peaks
   // This will be the markers for the foreground objects
   cv::threshold(dist, dist, 0.4, 1.0, cv::THRESH_BINARY);
   // Dilate a bit the dist image
   cv::Mat kernel1 = cv::Mat::ones(3, 3, CV_8U);
-  cv::dilate(dist, dist, kernel1);
-  // cv::imshow("Dilated Distance map", dist);
-  // cv::waitKey(0); // Makes the plots if any
+  cv::Mat dilatedDist;
+  cv::dilate(dist, dilatedDist, kernel1);
+
+
+  // Plots 
+  cv::imshow("Black Background Image", bwImage);
+  // cv::imshow("Skeletonized Image", skeleton);
+  cv::imshow("Distance Transform Image", dist);
+  cv::imshow("Dilated Distance map", dilatedDist);
+  cv::waitKey(0); // Makes the plots if any
 
   // Compute mean ICD
-  cv::Scalar ICD = cv::mean(dist);
+  cv::Scalar ICD = cv::mean(dilatedDist);
   // cout << "Intercapillary distance for the current tree: " << ICD[0] << endl;
   
   return ICD[0];

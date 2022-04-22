@@ -59,7 +59,7 @@ for file_name in file_names:
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
     actor.GetProperty().EdgeVisibilityOn()
-    actor.GetProperty().SetLineWidth(2.0)
+    actor.GetProperty().SetLineWidth(0.0)
     actor.GetProperty().SetColor(colors.GetColor3d("MistyRose"))
     
     backface = vtk.vtkProperty()
