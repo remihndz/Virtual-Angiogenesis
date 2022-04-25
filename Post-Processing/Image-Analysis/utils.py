@@ -6,7 +6,8 @@ import cv2 as cv # Requires opencv-contrib-python for the thinning function
 # Other
 import numpy as np
 import matplotlib.pyplot as plt
-
+from matplotlib import colors
+from matplotlib import cm
 
 def IntercapillaryDistanceMap(filename, plotResult=False):
 
@@ -37,7 +38,7 @@ def IntercapillaryDistanceMap(filename, plotResult=False):
         plt.imshow(erodedImg, cmap='gray')
         
         plt.subplot(122)
-        plt.imshow(D, cmap='hot')
+        plt.imshow(D, cmap='viridis', norm=colors.PowerNorm(gamma=0.4, vmin=0.0, vmax=0.15, clip=True))
         plt.colorbar()
         plt.show()
         
