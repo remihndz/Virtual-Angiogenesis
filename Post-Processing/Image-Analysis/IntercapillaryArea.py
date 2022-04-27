@@ -21,7 +21,7 @@ for filename in sys.argv[1:]:
 mean = array(means).mean()
 # std  = sum(variances)**.5
 std = array(means).std()
-print(u'Mean\u00B1std of intercapillary distance out of', count, 'images:', mean, u"\u00B1", std)
+print(u'Mean\u00B1std of intercapillary distance out of', count, 'images (in microns):', mean, u"\u00B1", std)
 
 variances = array(variances)**.5
 variances.reshape((-1,))
