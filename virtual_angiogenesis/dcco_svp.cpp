@@ -11,6 +11,7 @@
 #include<vector>
 #include<fstream>
 #include<ctime>
+#include<omp.h>
 
 // VItA Libs
 #include<structures/tree/AbstractCostEstimator.h>
@@ -228,6 +229,12 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
 
 int main(int argc, char *argv[])
 {
+  #pragma omp parallel
+  {
+    cout << "Thread " << omp_get_thread_num() << " running." << endl;
+  }
+  
+
   // Read the configuration file passed as command line argument
   string ConfigurationFileName = argv[1];
   ifstream config;
