@@ -38,15 +38,13 @@ add_executable(SingleStageGrowth SingleStageGrowth.cpp ${SOURCE_EXE})
 
 # link libraries
 find_package(OpenMP)
-# if(OpenMP_CXX_FOUND)
-#   target_link_libraries(dcco_svp PUBLIC VItA ${VTK_8_1_libs} ${OpenCV_LIBS} OpenMP::OpenMP_CXX)
-#   target_link_libraries(SingleStageGrowth PUBLIC VItA ${VTK_8_1_libs} ${OpenCV_LIBS} OpenMP::OpenMP_CXX)
-# else()
-#   target_link_libraries(dcco_svp VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
-#   target_link_libraries(SingleStageGrowth VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
-# endif()
-target_link_libraries(dcco_svp VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
-target_link_libraries(SingleStageGrowth VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(dcco_svp PUBLIC VItA ${VTK_8_1_libs} ${OpenCV_LIBS} OpenMP::OpenMP_CXX)
+  target_link_libraries(SingleStageGrowth PUBLIC VItA ${VTK_8_1_libs} ${OpenCV_LIBS} OpenMP::OpenMP_CXX)
+else()
+  target_link_libraries(dcco_svp VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
+  target_link_libraries(SingleStageGrowth VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
+endif()
 
 
 
