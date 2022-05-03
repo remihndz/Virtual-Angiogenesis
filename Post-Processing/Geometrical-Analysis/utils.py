@@ -8,6 +8,7 @@ import numpy as np
 import copy
 
 def ReadTree(ccoFile):
+    print("Reading", ccoFile)
     with open(ccoFile, 'r') as f:
         # Unused '*Tree' information
         row = f.readline()
@@ -15,9 +16,8 @@ def ReadTree(ccoFile):
         row = f.readline()
 
         # Vessels data
-        print('Reading', f.readline().strip(), '...')
+        print('\tReading', f.readline().strip(), '...')
         nVessels = int(f.readline())
-        print("Number of vessels in the tree: ", nVessels)
 
         treeData = []
         for i in range(nVessels):
@@ -27,7 +27,7 @@ def ReadTree(ccoFile):
             treeData.append([Id, r*10, l*10, q, stage]) # Convert to mm
         
         row = f.readline()
-        print('Reading', f.readline().strip())
+        print('\tReading', f.readline().strip(), '...')
         treeConnectivity = []
         for i in range(nVessels):
             row = (f.readline()).split()
@@ -37,7 +37,9 @@ def ReadTree(ccoFile):
             else:
                 Id, parentId, children = int(row[0]), int(row[1]), [int(i) for i in row[2:]]
                 treeConnectivity.append([Id, parentId, children])         
-        
+
+        print("\tNumber of vessels in the tree:", nVessels, "\n")
+            
     return treeData, treeConnectivity
 
 
@@ -296,3 +298,45 @@ def BifurcationDiameterRatio(treeData, treeConnectivity, plot=False):
     return [a for a in dsdl], [a for a in dldp]
 
 
+def VBC(treeData, treeConnectivity, plot=False):
+
+    # Copy the radii, sorted by vessel ID
+    radii = np.zeros((len(treeData),))
+    for v in treeData:
+        radii[v[0]] = v[1]
+    
+    VBC = []
+    for v in treeConnectivity:
+        if len(v[-1])==2:
+            p, d1, d2 = radii[v[0]], radii[v[-1][0]], radii[v[-1][1]]
+            VBC.append( (d1**2 + d2**2)/(p**2) )
+
+    VBC = np.array(VBC)
+    
+    if plot:
+        split = 10
+        x = np.linspace(VBC.min(), VBC.max(), split+1)
+        y = np.zeros((split+1,))
+        sortedVBC = np.sort(VBC)
+        
+        j = 0
+        for i in range(split):
+            count = 0
+            xi = x[i]
+            while xi >= sortedVBC[j]:
+                count+=1
+                j+=1
+            y[i] = count
+        y[-1] = VBC.size-j
+
+        plt.bar(x[:-1],y[:-1], width=(x[1]-x[0])/2.0)
+        plt.xticks(x[:-1], rotation=20)
+        plt.xlabel('Vessel branching coefficient')
+        plt.ylabel('Number of vessels')
+        plt.show()
+        
+    return VBC
+                
+    
+
+    

@@ -15,6 +15,7 @@ when computing the ICD.
 import sys, glob
 from sys import platform as _platform
 import vtkmodules.all as vtk
+from PIL import Image
 
 if _platform=='linux':
     file_names = sys.argv[1:]
@@ -85,6 +86,12 @@ for file_name in file_names:
     writer.SetInputConnection(w2if.GetOutputPort())
     writer.Write()
 
+    # Crop the image to a 3x3mm^2 window
+    img = Image.open(file_name_base + '.png')
+    imageBox = img.getbbox()
+    croppedImg = img.crop(imageBox)
+    croppedImg.save(file_name_base + '.png')
+    
     # Create the RendererWindowInteractor and display the vtk_file
     # interactor = vtk.vtkRenderWindowInteractor()
     # interactor.SetRenderWindow(renderer_window)

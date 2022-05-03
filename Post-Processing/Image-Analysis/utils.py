@@ -30,7 +30,7 @@ def IntercapillaryDistanceMap(filename, plotResult=False):
     erodedImg = cv.ximgproc.thinning(img)
 
     # Compute distance map
-    dHeight, dWidth = 3.0/img.shape[0], 3.0/img.shape[1] # Size of a pixel in mm
+    dHeight, dWidth = 3000/img.shape[0], 3000/img.shape[1] # Size of a pixel in microns
     D = distance_transform_edt(erodedImg==0, return_distances=True, sampling=[dHeight,dWidth])
     
     if plotResult:

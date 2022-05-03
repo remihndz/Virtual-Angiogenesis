@@ -11,8 +11,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(VTK_8_1_libs vtkCommonCore-8.1 vtkCommonDataModel-8.1 vtkCommonExecutionModel-8.1 vtkFiltersModeling-8.1 vtkIOCore-8.1 vtkIOLegacy-8.1 vtkIOXML-8.1 vtkIOGeometry-8.1 vtkInfovisCore-8.1 vtkFiltersGeneral-8.1 vtkFiltersCore-8.1 vtkCommonTransforms-8.1 vtkIOXMLParser-8.1 vtkImagingMorphological-8.1)
 
 # The functions to compute metrics to stop the tree generation
-set(SOURCE_EXE ~/Virtual-Angiogenesis/vtk_scripts/utils/IntercapillaryDistance.cpp ~/Virtual-Angiogenesis/vtk_scripts/utils/IntercapillaryDistance.hpp ~/Virtual-Angiogenesis/vtk_scripts/utils/VascularIndexes.cpp ~/Virtual-Angiogenesis/vtk_scripts/utils/VascularIndexes.hpp)
-set(UTILS_INCLUDE_DIR ~/Virtual-Angiogenesis/vtk_scripts/utils/)
+set(SOURCE_EXE ../vtk_scripts/utils/IntercapillaryDistance.cpp ../vtk_scripts/utils/IntercapillaryDistance.hpp ../vtk_scripts/utils/VascularIndexes.cpp ../vtk_scripts/utils/VascularIndexes.hpp)
+set(UTILS_INCLUDE_DIR ../vtk_scripts/utils/)
 include_directories(${UTILS_INCLUDE_DIR})
 
 find_package(OpenCV REQUIRED)
@@ -37,8 +37,18 @@ add_executable(dcco_svp dcco_svp.cpp ${SOURCE_EXE})
 add_executable(SingleStageGrowth SingleStageGrowth.cpp ${SOURCE_EXE})
 
 # link libraries
+find_package(OpenMP)
+# if(OpenMP_CXX_FOUND)
+#   target_link_libraries(dcco_svp PUBLIC VItA ${VTK_8_1_libs} ${OpenCV_LIBS} OpenMP::OpenMP_CXX)
+#   target_link_libraries(SingleStageGrowth PUBLIC VItA ${VTK_8_1_libs} ${OpenCV_LIBS} OpenMP::OpenMP_CXX)
+# else()
+#   target_link_libraries(dcco_svp VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
+#   target_link_libraries(SingleStageGrowth VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
+# endif()
 target_link_libraries(dcco_svp VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
 target_link_libraries(SingleStageGrowth VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
+
+
 
 # add all include directories needed for compilation
 target_include_directories(dcco_svp PUBLIC
