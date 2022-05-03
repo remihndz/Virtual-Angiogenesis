@@ -132,7 +132,6 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
     metrics.push_back(VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));    
     metricsObserver.push_back(metrics);
   }
-  cout << "ICD at baseline: " << ICD << endl;
 
   // Domain including perifovea and parafovea but not the FAZ
   // delete FSprout;
@@ -148,7 +147,9 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   domain->setMinBifurcationAngle(theta_min);
   // Add additional vessels until criterion is reached
   double targetICD = 0.0235;
-  int iter = 1, iterMax = 10;
+  int iter = 1, iterMax = 15;
+
+  cout << "ICD at baseline: " << ICD << "\t Target ICD: " << targetICD << endl;
   
   do
     {
@@ -174,7 +175,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
       tree_writer->write(fileName + ".vtp", tree);
       cout << "Saving checkpoint in " << fileName << ".cco/.vtp" <<  endl;
       ICD = IntercapillaryDistance(tree->getVtkTree(), 0.3, 512);
-      cout << "Current ICD: " << ICD << "\t ICD target: " << targetICD << endl;
+      cout << "ICD at stage " << iter << ": " << ICD << endl;
       iter++;
 
       vtkSmartPointer<vtkPolyData> treePolyData = tree->getVtkTree();
