@@ -98,4 +98,6 @@ for file_name in file_names:
     # interactor.Initialize()
     # interactor.Start()
 
+    renderer.RemoveAllViewProps()
+    
     print('File ', file_name, 'saved as', file_name_base + '.png')
