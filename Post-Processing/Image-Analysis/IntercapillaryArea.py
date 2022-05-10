@@ -29,4 +29,4 @@ means = array(means)
 data = np.zeros((means.shape[0],2))
 data[:,0] = means
 data[:,1] = variances
-savetxt('MeanAndStdOfICD.dat', data)
+savetxt('MeanAndStdOfICD.dat', data[:,0])
