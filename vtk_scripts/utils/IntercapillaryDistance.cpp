@@ -158,11 +158,11 @@ double IntercapillaryDistance(const vtkSmartPointer<vtkPolyData> tree, double FO
 
 
   // Plots 
-  cv::imshow("Black Background Image", bwImage);
-  // cv::imshow("Skeletonized Image", skeleton);
-  cv::imshow("Distance Transform Image", dist);
-  cv::imshow("Dilated Distance map", dilatedDist);
-  cv::waitKey(0); // Makes the plots if any
+  // cv::imshow("Black Background Image", bwImage);
+  // // cv::imshow("Skeletonized Image", skeleton);
+  // cv::imshow("Distance Transform Image", dist);
+  // cv::imshow("Dilated Distance map", dilatedDist);
+  // cv::waitKey(0); // Makes the plots if any
 
   // Compute mean ICD
   cv::Scalar ICD = cv::mean(dilatedDist);
