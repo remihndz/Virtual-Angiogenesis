@@ -46,8 +46,6 @@ else()
   target_link_libraries(SingleStageGrowth VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
 endif()
 
-
-
 # add all include directories needed for compilation
 target_include_directories(dcco_svp PUBLIC
   "${VITA_INCLUDE_DIRS}"
