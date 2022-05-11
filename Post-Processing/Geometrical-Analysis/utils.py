@@ -16,7 +16,8 @@ def ReadTree(ccoFile):
         row = f.readline()
 
         # Vessels data
-        print('\tReading', f.readline().strip(), '...')
+        # print('\tReading', f.readline().strip(), '...')
+        f.readline().strip()
         nVessels = int(f.readline())
 
         treeData = []
@@ -27,7 +28,8 @@ def ReadTree(ccoFile):
             treeData.append([Id, r*10, l*10, q, stage]) # Convert to mm
         
         row = f.readline()
-        print('\tReading', f.readline().strip(), '...')
+        # print('\tReading', f.readline().strip(), '...')
+        f.readline().strip()
         treeConnectivity = []
         for i in range(nVessels):
             row = (f.readline()).split()
@@ -80,6 +82,7 @@ def BifurcationOrder(treeData, treeConnectivity, orderMax=1e6):
             Id, radius, length, flow, stage, order = treeData[Id]
             treeDataNoRoot.append([count, radius, length, flow, stage, order])
             count+=1
+
     return treeDataNoRoot
 
 
