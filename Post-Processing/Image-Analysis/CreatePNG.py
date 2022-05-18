@@ -15,12 +15,8 @@ when computing the ICD.
 import sys, glob
 from sys import platform as _platform
 import vtkmodules.all as vtk
-from skimage.transform import resize
-from skimage.io import imsave
-from skimage import img_as_uint
-from PIL import Image, ImageOps
-import numpy as np
-import matplotlib.pyplot as plt
+from PIL import Image
+
 
 if _platform=='linux':
     file_names = sys.argv[1:]
@@ -65,7 +61,8 @@ for file_name in file_names:
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
     actor.GetProperty().EdgeVisibilityOn()
-    actor.GetProperty().SetLineWidth(2.0)
+    actor.GetProperty().SetLineWidth(0.0)
+
     actor.GetProperty().SetColor(colors.GetColor3d("MistyRose"))
     
     backface = vtk.vtkProperty()
@@ -79,8 +76,8 @@ for file_name in file_names:
     
     # Create the RendererWindow
     renderer_window = vtk.vtkRenderWindow()
-    renderer_window.SetSize(640*2, 480*2)
-    # renderer_window.SetSize(304, 304)
+    renderer_window.SetSize(640, 480)
+
     renderer_window.AddRenderer(renderer)
     
     w2if = vtk.vtkWindowToImageFilter()
@@ -92,18 +89,17 @@ for file_name in file_names:
     writer.SetInputConnection(w2if.GetOutputPort())
     writer.Write()
 
+    # Crop the image to a 3x3mm^2 window
+    img = Image.open(file_name_base + '.png')
+    imageBox = img.getbbox()
+    croppedImg = img.crop(imageBox)
+    croppedImg.save(file_name_base + '.png')
+
     # Create the RendererWindowInteractor and display the vtk_file
     # interactor = vtk.vtkRenderWindowInteractor()
     # interactor.SetRenderWindow(renderer_window)
     # interactor.Initialize()
     # interactor.Start()
 
+    renderer.RemoveAllViewProps()    
     print('File ', file_name, 'saved as', file_name_base + '.png')
-
-    img = ImageOps.grayscale(Image.open(file_name_base+'.png'))
-    imgBox = img.getbbox()
-    img = img.crop(imgBox)
-    image = np.array(img).astype(np.uint8)
-    image = resize(image, (304, 304), anti_aliasing=True)
-    imsave(file_name_base + '_resized.png', img_as_uint(image))
-    

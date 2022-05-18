@@ -1,38 +1,74 @@
 # Libs for image processing
 from PIL import Image, ImageOps
 from scipy.ndimage import distance_transform_edt
-import cv2 as cv
+import cv2 as cv # Requires opencv-contrib-python for the thinning function
+
 
 # Other
 import numpy as np
 import matplotlib.pyplot as plt
-
+from matplotlib import colors
+from matplotlib import cm
 
 def IntercapillaryDistanceMap(filename, plotResult=False):
 
+    threshold = 0
+    if filename[-4:] == '.tif':
+        threshold = 50          # Threshold value that gives a VAD~0.5
+        
     img = ImageOps.grayscale(Image.open(filename))
+    img = img.point( lambda p: 255 if p > threshold else 0)
+    img.convert('1')
+
     # Crop the image to the edges of the FOV
     imgBox = img.getbbox()
     img = np.array(img.crop(imgBox))
 
     # Erode
-    kernel = np.ones((2,2), np.uint8)
-    erodedImg = cv.erode(img, kernel, iterations=1)
+    # kernel = np.ones((2,2), np.uint8)
+    # erodedImg = cv.erode(img, kernel, iterations=1)
+
+    # Skeletonize (Zheng Suen algorithm)
+    erodedImg = cv.ximgproc.thinning(img)
 
     # Compute distance map
-    dHeight, dWidth = 3.0/img.shape[0], 3.0/img.shape[1] # Size of a pixel in mm
+    dHeight, dWidth = 3000/img.shape[0], 3000/img.shape[1] # Size of a pixel in microns
     D = distance_transform_edt(erodedImg==0, return_distances=True, sampling=[dHeight,dWidth])
     
     if plotResult:
         plt.subplot(121)
-        plt.imshow(erodedImg)
+        plt.imshow(erodedImg, cmap='gray')
         
         plt.subplot(122)
-        plt.imshow(D, cmap='hot')
+        plt.imshow(D, cmap='viridis', norm=colors.PowerNorm(gamma=0.4, vmin=0.0, vmax=0.15, clip=True))
         plt.colorbar()
         plt.show()
-
+        
     return D
+
+def VesselDensityForOCTA(filename, plotResult=False, threshold=50):
+        
+    img = ImageOps.grayscale(Image.open(filename))
+    img = img.point( lambda p: 1 if p > threshold else 0)
+    img.convert('1')
+    # # Crop the image to the edges of the FOV
+    imgBox = img.getbbox()
+    img = np.array(img.crop(imgBox))
+
+    # # Erode
+    kernel = np.ones((2,2), np.uint8)
+    erodedImg = cv.erode(img, kernel, iterations=1)
+
+    # Compute VAD
+
+    if plotResult:
+        plt.imshow(img, cmap='gray')
+        plt.show()
+    pix = np.array(img)         # Convert to an array
+    VAD = pix.mean()
+
+    return VAD
+
 
 
 
@@ -44,7 +80,7 @@ def FractalDimensionForParaviewScreenShot(img, threshold=0.0, plot=False):
         imgGray = 0.2989 * R + 0.5870 * G + 0.1140 * B
         img = imgGray
         
-    
+
     # From https://github.com/rougier/numpy-100 (#87)
     def boxcount(img, k):
         S = np.add.reduceat(
@@ -78,9 +114,9 @@ def FractalDimensionForParaviewScreenShot(img, threshold=0.0, plot=False):
     coeffs = np.polyfit(np.log(sizes), np.log(counts), 1)
     D = coeffs[0]
     
-    print("Minkowski–Bouligand dimension (computed): ", -D)
-
     if plot:
+        print("Minkowski–Bouligand dimension (computed): ", -D)
+            
         plt.figure(1)
         plt.imshow(img, cmap=plt.cm.gray_r)
         plt.title(f'Binarized image with threshold {threshold:1.2f}')
@@ -151,7 +187,8 @@ def FractalDimension(img, threshold=15.0):
     plt.title(f'Minkowski-Bouligand dimension: {-D:1.2f}')
     plt.legend()
     plt.show()
-    return
+    return -D
+
 
 def FractalDimensionMap(img, w, threshold=0.0):
     
@@ -163,11 +200,6 @@ def FractalDimensionMap(img, w, threshold=0.0):
 
     # Transform img into a binary array
     img = (img > threshold).astype(int) # Vessels in black, background in white
-    img = img[img.shape[0]]/2.
-    # plt.imshow(img, cmap=plt.cm.gray_r)
-    # plt.show()
-              
-    
     # From https://github.com/rougier/numpy-100 (#87)
     def boxcount(img, k):
         S = np.add.reduceat(
@@ -202,6 +234,9 @@ def FractalDimensionMap(img, w, threshold=0.0):
         D = coeffs[0]
         if np.isnan(D):
             return 0
+        if D > 0:
+            return 0
+
         return -D
 
     

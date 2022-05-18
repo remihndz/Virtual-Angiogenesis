@@ -149,7 +149,7 @@ int CreateVascularAndAvascularRegions(double FOV_in_cm, double FAZ_in_cm)
   
     // Save the polydata
     vtkNew<vtkPolyDataWriter> writer;
-    std::string fileName = "../../base_geometries/VTKFiles/hull.vtk";
+    std::string fileName = "../../base_geometries/VTKFiles/macula.vtk";
     writer->SetFileName(fileName.c_str());
     writer->SetInputData(aPolyData);
     writer->Write();
@@ -162,7 +162,7 @@ int CreateVascularAndAvascularRegions(double FOV_in_cm, double FAZ_in_cm)
     disk->SetNumberOfSides(50);
     disk->SetRadius(FOV_in_cm/3.0);
     disk->Update();  
-    std::string fileName = "../../base_geometries/VTKFiles/non_vascular_region_1.vtk";
+    std::string fileName = "../../base_geometries/VTKFiles/parafovea.vtk";
 
     vtkNew<vtkPolyDataWriter> writer;
     writer->SetFileName(fileName.c_str());
@@ -179,14 +179,14 @@ int CreateVascularAndAvascularRegions(double FOV_in_cm, double FAZ_in_cm)
     disk->SetCenter(0,0,0);
     disk->Update();  
 
-    std::string fileName = "../../base_geometries/VTKFiles/non_vascular_region_2_inner.vtk";
+    std::string fileName = "../../base_geometries/VTKFiles/FAZ.vtk";
     vtkNew<vtkPolyDataWriter> writer;
     writer->SetFileName(fileName.c_str());
     writer->SetInputData(disk->GetOutput());
     writer->Write();
     std::cout << "Inner Non Vascular Region for stage 2 written in " << fileName << std::endl;
 
-    fileName = "../../base_geometries/VTKFiles/non_vascular_region_2_outer.vtk";
+    fileName = "../../base_geometries/VTKFiles/perifovea.vtk";
     CreateSquareWithCircularHole(fileName, FOV_in_cm, FOV_in_cm/3.0);
     std::cout << "Outer Non Vascular Region for stage 2 written in " << fileName << std::endl;
   }
@@ -200,7 +200,7 @@ int main()
   const int dir_err = std::system("mkdir -p ../../base_geometries/VTKFiles/");
   if (-1 == dir_err)
     {
-      printf("Error creating directory!n");
+      printf("Error creating directory!\n");
       exit(1);
     }
 

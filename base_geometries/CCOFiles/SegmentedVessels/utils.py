@@ -7,7 +7,7 @@ def CreateRootTree(FOV, Radius, n):
     RootData = []
 
     ## Define the points that will be linked to the segmented vessels
-    n = 8                           # Number of nodes along each sides of the square
+    n = 10                           # Number of nodes along each sides of the square
     h = 1.3*FOV/n
     x,y = root_nodes[1][:-1]        # Point of the bifurcation
     

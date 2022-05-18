@@ -1,3 +1,7 @@
+// My libs
+#include<IntercapillaryDistance.hpp>
+#include<VascularIndexes.hpp>
+
 // STD Libs
 #include<cmath>
 #include<string>
@@ -6,7 +10,8 @@
 #include<cstdlib>
 #include<vector>
 #include<fstream>
-
+#include<ctime>
+#include<omp.h>
 
 // VItA Libs
 #include<structures/tree/AbstractCostEstimator.h>
@@ -23,26 +28,30 @@
 #include<structures/domain/SimpleDomain2D.h>
 #include<structures/domain/NormalDistributionGenerator.h>
 #include<structures/vascularElements/SingleVessel.h>
-#include<structures/tree/AdimSproutingVolumetricCostEstimator.h>
+#include<structures/tree/VolumetricCostEstimator.h>
 #include<structures/tree/SproutingVolumetricCostEstimator.h>
+
+#include<stats/ObjectTreeStatsManager.h>
+#include<stats/VesselObjectHandler.h>
 
 using namespace std;
 
-void Vascularise(string output_filename, string root_tree_filename, string Hull,
-		 vector<string> NVR_1, vector<string> NVR_2,
-		 long long int n_term_1, long long int n_term_2,
+void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
+		 vector<string> NVR1, vector<string> NVR2,
+		 long long int nTerms_1, long long int nTerms_2,
 		 AbstractConstraintFunction<double, int>* gam,
 		 AbstractConstraintFunction<double, int>* delta,
 		 AbstractConstraintFunction<double, int>* eta,
-		 int n_draw, int seed, int N_fail, double l_lim_fr,
+		 int nDraw, int seed, int nFail, double l_lim_fr,
 		 double perfusion_area_factor, double close_neighborhood_factor, int Delta_nu,
 		 double theta_min)
 {
   
   // Simulation parameters for each stage
   SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
+  // VolumetricCostEstimator *FSprout = new VolumetricCostEstimator();
   AbstractCostEstimator *costEstimator = FSprout;
-  GeneratorData *gen_data = new GeneratorData(160, N_fail, l_lim_fr, perfusion_area_factor,
+  GeneratorData *genData = new GeneratorData(160, nFail, l_lim_fr, perfusion_area_factor,
 					      close_neighborhood_factor, 0.25, Delta_nu, 0, false,
 					      costEstimator);
 
@@ -53,31 +62,32 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
   
 
   // Domain definition for stage 1
-  DomainNVR *domain_1 = new DomainNVR(Hull, NVR_1, n_draw, seed, gen_data);
+  DomainNVR *domain_1 = new DomainNVR(Hull, NVR1, nDraw, seed, genData);
   domain_1->setIsConvexDomain(true);
   domain_1->setMinBifurcationAngle(theta_min);
   cout << "Domain 1 generated." << endl;
 
   // Domain definition for stage 2
-  DomainNVR *domain_2 = new DomainNVR(Hull, NVR_2, n_draw, seed, gen_data_stage2);
+  DomainNVR *domain_2 = new DomainNVR(Hull, NVR2, nDraw, seed, genData);
+
   domain_2->setIsConvexDomain(true);
   domain_2->setMinBifurcationAngle(theta_min);
   cout << "Domain 2 generated." << endl;
 
-  StagedDomain *staged_domain = new StagedDomain();
-  staged_domain->addStage(n_term_1, domain_1);
-  staged_domain->addStage(n_term_2, domain_2);
-  cout << "Staged domain initiated." << endl;
+  StagedDomain *stagedDomain = new StagedDomain();
+  stagedDomain->addStage(nTerms_1, domain_1);
+  stagedDomain->addStage(nTerms_2, domain_2);
+  cout << "Staged domain initialized." << endl;
 
   // Checking that the root tree's .cco file exists
-  ifstream is_root_tree_correct {root_tree_filename};
+  ifstream is_root_tree_correct {rootTreeFileName};
   if (!is_root_tree_correct){
     cerr << "Error: file could not be opened. The root tree's .cco file could not be found." << endl;
     exit(1);
   }
   is_root_tree_correct.close();
   
-  SingleVesselCCOOTree *tree = new SingleVesselCCOOTree(root_tree_filename, gen_data, gam, delta, eta);
+  SingleVesselCCOOTree *tree = new SingleVesselCCOOTree(rootTreeFileName, genData, gam, delta, eta);
   tree->setIsInCm(true);
   tree->setCurrentStage(2);
   int currentStage{tree->getCurrentStage()};
@@ -86,35 +96,151 @@ void Vascularise(string output_filename, string root_tree_filename, string Hull,
   cout << "Saving root tree.\n" << endl;
   // Save the root tree
   VTKObjectTreeNodalWriter *tree_writer = new VTKObjectTreeNodalWriter();
-  tree_writer->write(output_filename + "_root.vtp", tree);
-  tree->save(output_filename + ".cco.root");
-  staged_domain->setInitialStage(0);
+  tree_writer->write(outputFileName + "_root.vtp", tree);
+  tree->save(outputFileName + ".cco.root");
+  stagedDomain->setInitialStage(0);
 
-  long long int n_term_total = n_term_1 + n_term_2 + tree->getNTerms();
+  long long int nTermTotal = nTerms_1 + nTerms_2 + tree->getNTerms();
   
-  StagedFRROTreeGenerator *tree_generator = new StagedFRROTreeGenerator(staged_domain, tree,
-									n_term_total,
+  StagedFRROTreeGenerator *treeGenerator = new StagedFRROTreeGenerator(stagedDomain, tree,
+									nTermTotal,
 									{gam, gam},
 									{delta, delta},
 									{eta, eta});
-  tree_generator->setDLim(tree_generator->getDLim()/2.);
+  treeGenerator->setDLim(treeGenerator->getDLim()/2.);
   
   cout << "Staged tree generator initialised." << endl;
   
   cout << "Starting tree generation." << endl;
-  tree = {(SingleVesselCCOOTree *) tree_generator->resume(200, "./")};
+  tree = {(SingleVesselCCOOTree *) treeGenerator->resume(200, "./")};
   cout << "Finished generating the tree." << endl;
 
   cout << "Saving the results..." << endl;
 
-  tree->save(output_filename + ".cco");  
-  tree_writer->write(output_filename + ".vtp", tree);
-  cout << "Output written in " << output_filename << ".cco and " << output_filename << ".vtp." << endl;
+  tree->save(outputFileName + "_0.cco");  
+  tree_writer->write(outputFileName + "_0.vtp", tree);
+
+  double ICD = IntercapillaryDistance(tree->getVtkTree(), 0.3, 512);
+
+  vector<vector<double>> metricsObserver;
+  {
+    vtkSmartPointer<vtkPolyData> treePolyData = tree->getVtkTree();
+    vector<double> metrics;
+    metrics.push_back(tree->getNTerms()); 
+    metrics.push_back((tree->getSegments()).size()); 
+    metrics.push_back(treeGenerator->getDLim());
+    metrics.push_back(tree->computeTreeCost(tree->getRoot()));
+    metrics.push_back(( tree->getConnectivity() ).size()); 
+    metrics.push_back(ICD);
+    metrics.push_back(VesselAreaDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+    metrics.push_back(VesselSkeletonDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+    metrics.push_back(VesselPerimeterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+    metrics.push_back(VesselComplexityIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+    metrics.push_back(VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));    
+    metricsObserver.push_back(metrics);
+  }
+
+  // Domain including perifovea and parafovea but not the FAZ
+  // delete FSprout;
+  // delete costEstimator;
+  // delete genData;
+  // SproutingVolumetricCostEstimator *FSproutNew = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
+  // costEstimator = FSproutNew;
+  // genData = new GeneratorData(160, nFail, l_lim_fr, perfusion_area_factor,
+  // 			      close_neighborhood_factor, 0.25, Delta_nu, 0, false,
+  // 			      costEstimator);
+  DomainNVR *domain = new DomainNVR(Hull, {NVR2.back()}, 50, seed, genData);
+  domain->setIsConvexDomain(false);
+  domain->setMinBifurcationAngle(theta_min);
+  // Add additional vessels until criterion is reached
+  double targetICD = 0.024;
+  int iter = 1, iterMax = 15;
+
+  cout << "ICD at baseline: " << ICD << "\t Target ICD: " << targetICD << endl;
+  
+  do
+    {
+      time_t startTime, endTime;
+      int n = 500;		// Increment to the number of terminal vessels
+
+      delete stagedDomain;
+      stagedDomain = new StagedDomain();
+      stagedDomain->addStage(n, domain);
+      nTermTotal += n;
+      delete treeGenerator;
+      treeGenerator = new StagedFRROTreeGenerator(stagedDomain, tree, nTermTotal,
+						  {gam}, {delta}, {eta});
+ 
+      startTime = time(NULL);
+      cout << "Adding " << n << " terminal vessels to the previous tree...." << endl;
+      tree = {(SingleVesselCCOOTree *) treeGenerator->resume(200, "./")};
+      endTime = time(NULL);
+      cout << "Time for sprouting: " <<  endTime-startTime << "s for " << nTermTotal << " vessels" << endl;
+
+      string fileName = outputFileName + "_" + to_string(iter);
+      tree->save(fileName + ".cco");
+      tree_writer->write(fileName + ".vtp", tree);
+      cout << "Saving checkpoint in " << fileName << ".cco/.vtp" <<  endl;
+      ICD = IntercapillaryDistance(tree->getVtkTree(), 0.3, 512);
+      cout << "ICD at stage " << iter << ": " << ICD << endl;
+      iter++;
+
+      vtkSmartPointer<vtkPolyData> treePolyData = tree->getVtkTree();
+      vector<double> metrics;
+      metrics.push_back(tree->getNTerms());
+      metrics.push_back((tree->getSegments()).size()); 
+      metrics.push_back(treeGenerator->getDLim());
+      metrics.push_back(tree->computeTreeCost(tree->getRoot()));
+      metrics.push_back(( tree->getConnectivity() ).size()); 
+      metrics.push_back(ICD);
+      metrics.push_back(VesselAreaDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+      metrics.push_back(VesselSkeletonDensity(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+      metrics.push_back(VesselPerimeterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+      metrics.push_back(VesselComplexityIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));
+      metrics.push_back(VesselDiameterIndex(tree->getVessels(), 0.09-pow(0.04, 2)*M_PI));    
+      metricsObserver.push_back(metrics);
+      }   while ((ICD > targetICD) and (iter < iterMax));
+
+  // Get the diameter by branching order
+  ObjectTreeStatsManager *statsManager = new ObjectTreeStatsManager(tree);
+  vector<double> levels, means, stds;
+  VesselObjectHandler::ATTRIBUTE att = VesselObjectHandler::ATTRIBUTE::DIAMETER;
+
+  // Saves the tree stats data
+  statsManager->getMeanPerLevel(&levels, &means, &stds, att);
+  string fileName = outputFileName + "_diameters.dat";
+  ofstream outputFile(fileName);
+  for (int i = 0; i<levels.size(); i++)
+    {
+      outputFile << levels[i] << ' ' << means[i] << ' ' << stds[i] << endl;
+    }
+  outputFile.close();
+
+  // Save the metrics at each stage
+  fileName = outputFileName + "_metrics.dat";
+  outputFile.open(fileName);
+  outputFile << "NTerms NSegments DLim TreeCost NVessels ICD VAD VSD VPI VCI VDI" << endl;
+  for (auto e: metricsObserver)
+    {
+      for (int j = 0; j < e.size(); j++)
+	outputFile << e[j] << ' ';
+      outputFile << endl;
+    }
+  outputFile.close();
+  cout << "Output written in " << outputFileName << "_i.cco and " << outputFileName << "_i.vtp." << endl;
 }
+
+
+
 
 
 int main(int argc, char *argv[])
 {
+#pragma omp parallel
+  {
+    cout << "Thread " << omp_get_thread_num() << " running." << endl;
+  }
+  
 
   // Read the configuration file passed as command line argument
   string ConfigurationFileName = argv[1];
@@ -130,7 +256,7 @@ int main(int argc, char *argv[])
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
-  string output_filename {line};
+  string outputFileName {line};
   
   // Hull
   config.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -141,42 +267,42 @@ int main(int argc, char *argv[])
   // Domain 1
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
-  int nb_NVR_1 {stoi(line)};  
-  vector<string> NVR_1;
-  cout << "The " << nb_NVR_1 << " non vascular regions for domain 1 are: ";
-  for (int i = 0; i < nb_NVR_1; i++){
+  int nb_NVR1 {stoi(line)};  
+  vector<string> NVR1;
+  cout << "The " << nb_NVR1 << " non vascular regions for domain 1 are: ";
+  for (int i = 0; i < nb_NVR1; i++){
     getline(config, line);
-    NVR_1.push_back(line);
-    cout << NVR_1[i] << " ";
+    NVR1.push_back(line);
+    cout << NVR1[i] << " ";
   }
   cout << endl;
 
   // Domain 2
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
-  int nb_NVR_2 {stoi(line)};
-  vector<string> NVR_2;
-  cout << "The " << nb_NVR_2 << " non vascular regions for domain 2 are: ";
-  for (int i = 0; i < nb_NVR_2; i++){
+  int nb_NVR2 {stoi(line)};
+  vector<string> NVR2;
+  cout << "The " << nb_NVR2 << " non vascular regions for domain 2 are: ";
+  for (int i = 0; i < nb_NVR2; i++){
     getline(config, line);
-    NVR_2.push_back(line);
-    cout << NVR_2[i] << " ";
+    NVR2.push_back(line);
+    cout << NVR2[i] << " ";
   }
   cout << endl;
 
   // Root tree
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
-  string input_cco {line};
-  cout << "Root tree file: " << input_cco << endl;
+  string inputCCO {line};
+  cout << "Root tree file: " << inputCCO << endl;
   
   // Other simulation parameters
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
-  long long int n_term_1 {stoll(line)};
+  long long int nTerms_1 {stoll(line)};
   getline(config, line);
-  long long int n_term_2 {stoll(line)};
+  long long int nTerms_2 {stoll(line)};
   
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
@@ -213,7 +339,7 @@ int main(int argc, char *argv[])
 
   
   // Copying the config file in the output folder
-  string root_results {output_filename.substr(0, output_filename.find_last_of("/"))};
+  string root_results {outputFileName.substr(0, outputFileName.find_last_of("/"))};
   string filename {ConfigurationFileName.substr(ConfigurationFileName.find_last_of("/") + 1)};
   string command {"mkdir -p " + root_results};
   const int dir_err = system(command.c_str());
@@ -232,18 +358,18 @@ int main(int argc, char *argv[])
   
   cout << "Simulation parameters read successfully." << endl;
 
-  // Consecutive attempts to generate a point - N_fail
-  int N_fail = 200;
+  // Consecutive attempts to generate a point - nFail
+  int nFail = 200;
   // Discretisation of the testing triangle for the bifurcation - Delta nu - Figure 1
   int Delta_nu = 7;
   // Buffer size for random point generation
-  int n_draw {10000};
+  int nDraw {1000};
   // Random seed
   long long int seed {time(nullptr)};
   
-  Vascularise(output_filename, input_cco, Hull, NVR_1, NVR_2, n_term_1, n_term_2,
-	      gam, delta, eta, n_draw, seed, N_fail, l_lim_fr,
-	      perfusion_area_factor, close_neighbourhood_factor, Delta_nu, theta_min);
+  Vascularise(outputFileName, inputCCO, Hull, NVR1, NVR2, nTerms_1, nTerms_2,
+  	      gam, delta, eta, nDraw, seed, nFail, l_lim_fr,
+  	      perfusion_area_factor, close_neighbourhood_factor, Delta_nu, theta_min);
     
     delete gam;    
     delete delta;

@@ -1,10 +1,13 @@
+import sys
 import glob
 import csv
 import os
 from utils import CreateRootTree, LinkToRootTree, SaveTree
 
+patientFolder = sys.argv[-1]
 FOV    = 0.3                    # Size of the field of view. Shifts the FAZ to (x,y,z)=(0,0,0), in cm
 Radius = 0.005                  # Fixed radius for all vessels, in cm
+
                                 # TODO: add radius for each vessel
 NVessels = 0                    # Number of vessels
 NSegments = 0                   # Total number of segments in the segmented vessels
@@ -22,7 +25,7 @@ n = 6
 RootData, RootConn, vtkSegmentId = CreateRootTree(FOV, Radius, n)
 
 # Read data from files
-for filename in glob.iglob('./Vessel*'):
+for filename in glob.iglob(patientFolder + '/Vessel*'):
     NVessels +=1
     with open(filename) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -47,5 +50,6 @@ for filename in glob.iglob('./Vessel*'):
             xProx = xDist
 
 LinkToRootTree(VesselsData, VesselsConn, RootData, RootConn)
-SaveTree('../10VesselsRootTree.cco', VesselsData, VesselsConn, RootData, RootConn)
-
+patientName = input("Name of the output cco file (without extension):")
+SaveTree('../' + patientName+'.cco', VesselsData, VesselsConn, RootData, RootConn)
+print('Tree save in: ' + '../' + patientName+'.cco')
