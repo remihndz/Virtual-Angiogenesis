@@ -19,7 +19,7 @@ for rootdir in sys.argv[1:]:
         if stages:
             fileIndex = stages.index(max(stages))
             fileName = os.path.join(subdir, eligibleFiles[fileIndex])
-            # print("For sim", subdir, "copy files", fileName+'.cco', fileName+'.vtp', "as", subdir+'.cco', subdir + '.vtp')
+            print("For sim", subdir, "copy files", fileName+'.cco', fileName+'.vtp', "as", subdir+'.cco', subdir + '.vtp')
             
             os.system("cp %s %s" %(fileName+'.cco', subdir+'.cco'))
             os.system("cp %s %s" %(fileName+'.vtp', subdir+'.vtp'))

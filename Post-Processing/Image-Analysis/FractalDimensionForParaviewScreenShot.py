@@ -11,14 +11,19 @@ threshold = 0
 
 D = []
 print('Found', len(sys.argv[1:]), 'files')
+
+f = open('FD.dat', 'w')
+f.write("File FD\n")
+
 for imgFile in sys.argv[1:]:
-    print('Reading file', imgFile)
     img = imread(imgFile)
     D.append(FractalDimensionForParaviewScreenShot(img, threshold=threshold))
 
+    print('For', imgFile, 'FD=', D[-1])
+    f.write(f"{imgFile} {D[-1]}\n")
+    
 D = np.array(D)
 print('Mean and standard deviation:', D.mean(), D.std())
-np.savetxt('FractalDimensionOfGeneratedTrees.dat', D)
 
 # LocalFractalDimensionMap(img, w=1)
 # FractalDimensionMap(img, w=2)

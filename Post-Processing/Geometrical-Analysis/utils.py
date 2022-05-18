@@ -16,19 +16,17 @@ def ReadTree(ccoFile):
         row = f.readline()
 
         # Vessels data
-        # print('\tReading', f.readline().strip(), '...')
         f.readline().strip()
         nVessels = int(f.readline())
 
         treeData = []
         for i in range(nVessels):
             row = (f.readline()).split() # Split all columns in a list
-            Id, xProx, xDist, r, q, stage = int(row[0]), row[1:4], row[4:7], float(row[12]), float(row[9]), int(row[-1])
+            Id, xProx, xDist, r, q, stage = int(row[0]), row[1:4], row[4:7], float(row[12]), float(row[10]), int(row[-1])
             l = sum([(float(a)-float(b))**2 for a,b in zip(xProx, xDist)])**.5
             treeData.append([Id, r*10, l*10, q, stage]) # Convert to mm
         
         row = f.readline()
-        # print('\tReading', f.readline().strip(), '...')
         f.readline().strip()
         treeConnectivity = []
         for i in range(nVessels):

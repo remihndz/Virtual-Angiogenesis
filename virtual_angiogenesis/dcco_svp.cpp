@@ -143,11 +143,11 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   // genData = new GeneratorData(160, nFail, l_lim_fr, perfusion_area_factor,
   // 			      close_neighborhood_factor, 0.25, Delta_nu, 0, false,
   // 			      costEstimator);
-  DomainNVR *domain = new DomainNVR(Hull, {NVR2.back()}, 100, seed, genData);
+  DomainNVR *domain = new DomainNVR(Hull, {NVR2.back()}, 50, seed, genData);
   domain->setIsConvexDomain(false);
   domain->setMinBifurcationAngle(theta_min);
   // Add additional vessels until criterion is reached
-  double targetICD = 0.0235;
+  double targetICD = 0.024;
   int iter = 1, iterMax = 15;
 
   cout << "ICD at baseline: " << ICD << "\t Target ICD: " << targetICD << endl;
@@ -155,7 +155,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   do
     {
       time_t startTime, endTime;
-      int n = 200;		// Increment to the number of terminal vessels
+      int n = 500;		// Increment to the number of terminal vessels
 
       delete stagedDomain;
       stagedDomain = new StagedDomain();
