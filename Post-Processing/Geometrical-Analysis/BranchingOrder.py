@@ -7,6 +7,7 @@ from numpy import loadtxt
 orderMax = 10
 
 
+
 # Parameters of the plots
 fontsize = 20
 markersize = 10
@@ -28,6 +29,7 @@ tex_fonts = {
 plt.rcParams.update(tex_fonts)
 
 treesData = []
+
 bifRatios = [[],[]]
 maxR, minR = [], []
 for ccoFile in sys.argv[1:]:
@@ -37,8 +39,10 @@ for ccoFile in sys.argv[1:]:
     orderedData = BifurcationOrder(data, connectivity, orderMax=orderMax)
     treesData.extend(orderedData)
     a,b = BifurcationDiameterRatio(data, connectivity, plot=False)
+
     bifRatios[0].extend(a)
     bifRatios[1].extend(b)
+
     rad = np.array(orderedData)[:,1]*1e3
     minR.append(rad.min())
     maxR.append(rad.max())
@@ -64,7 +68,7 @@ for Id, radius, length, flow, stage, order in treesData:
 
 orderDistribution /= len(sys.argv[1:])
 dataRadius = dataRadius.transpose()
-# np.savetxt('./Radii.dat', dataRadius)
+
 dataLength = dataLength.transpose()
 dataAspectRatio = dataAspectRatio.transpose()
 # Compute descriptive statistics for each order
@@ -123,6 +127,7 @@ KornfieldDiameter = np.loadtxt('img/Kornfield2014.dat')
 plt.figure(1, figsize=[8.8, 7.2])
 plt.xlabel('Number of bifurcations')
 plt.ylabel(r'Diameter ($\mu m$)')
+
 plt.errorbar(x, 2*meanRadius, 2*stdRadius, capsize=4, color='black',
              label=f'This work (diameter range: {(2*minR).mean():1.1f} to {(2*maxR).mean():1.1f})',
              marker='s', markersize=markersize)
@@ -133,39 +138,15 @@ plt.plot(x[-5:], np.flip(An[:,1]), label='An 2020, mean value', linestyle='--', 
 
 plt.plot(x[-4:], np.flip(KornfieldDiameter[:,1]), label='Kornfield 2014, rat retina', linestyle='dotted', marker='v', color='black', markersize=markersize)
 
-# plt.errorbar(range(YuDiameter[:,0].size), YuDiameter[:,1], YuDiameter[:,2], label=r'Yu 2020, mean$\pm$std', linestyle='dotted', marker='v', color='black', capsize=4, markersize=markersize)
-
-# plt.yscale('log')
-# plt.grid(True, which='both', linestyle='dotted')
 plt.legend()
 ax2 = plt.twinx()
 ax2.set_ylabel('Average number of vessels per group')
+
 ax2.bar(x, np.flip(orderDistribution), alpha=0.3, color='gray')
-
-# plt.figure(2)
-# plt.xlabel('Number of bifurcations')
-# plt.ylabel(r'Length ($\mu m$)')
-# plt.errorbar(x, meanLength, stdLength, capsize=4, color='black')
-# plt.plot(Takahashi[:,0], Takahashi[:,2], label="Takahashi's ideal network", linestyle='-.', color='black')
-
-# plt.errorbar(range(YuLength[:,0].size), YuLength[:,1], YuLength[:,2], label=r'Yu 2020, mean$\pm$std', marker='v', linestyle='dotted', color='black', capsize=4, markersize=markersize)
-# plt.legend()
-
-# ax2 = plt.twinx()
-# ax2.set_ylabel('Average number of vessels per stream order')
-# ax2.bar(x, orderDistribution, alpha=0.3, color='gray')
-
-# plt.figure(3)
-# plt.xlabel('Horton-Strahler stream order')
-# plt.ylabel(r'Aspect ratio')
-# plt.errorbar(x, meanAspectRatio, stdAspectRatio, capsize=4, color='black', label=r'This work, mean$\pm$std')
-# plt.legend()
-# ax2 = plt.twinx()
-# ax2.set_ylabel('Average number of vessels per stream order')
-# ax2.bar(x, orderDistribution, alpha=0.3, color='gray')
 
 print('Min/max diameter for my networks:', minD, maxD)
 print('Min/max for Takahashi:', Takahashi[:,1].min(), ' / ', Takahashi[:,1].max())
+
 ticks_labels = [str(xi) for xi in x[:-1]]
 ticks_labels.append(r'$>$' + str(x[-2]))
 plt.xticks(x, ticks_labels)
@@ -179,9 +160,11 @@ tableToSave[:,4] = np.flip(orderDistribution)
 np.savetxt('RadiusPerBifurcationOrder.dat', tableToSave, header="BifOrder meanRadius AboveStd BelowStd Freq", comments='')
 plt.savefig('DiameterVsBranchingOrder.png', dpi=500, bbox_inches='tight')
 
+
 plt.figure(2, figsize=[7.2, 5.6])
 bifRatios.sort()
 bifRatios = np.array(bifRatios)
+
 dsdl, dldp = np.array(bifRatios[0]), np.array(bifRatios[1])
 tableToSave = np.zeros((dsdl.shape[0], 2))
 tableToSave[:,0] = dsdl
@@ -190,6 +173,7 @@ np.savetxt('DiameterRatiosAtBifurcations.dat', tableToSave, header="SmallerBranc
 
 aggregatedData = []
 x = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+
 for i,xi in enumerate(x[1:]):
     xim = x[i]
     mask = (dsdl>xim) & (dsdl<xi)
@@ -217,9 +201,7 @@ plt.savefig('BifurcationRatio.png', dpi=300, bbox_inches='tight')
 
 plt.show()
 
-
-
-# Save all the data
+# Save all the data (large file)
 f = open("TreesData.dat", "w")
 f.write("Diameter Length Flow Stage Order\n")
 for Id, radius, length, flow, stage, order in treesData:
@@ -229,4 +211,4 @@ for Id, radius, length, flow, stage, order in treesData:
 
 f.close()
 
-    
+

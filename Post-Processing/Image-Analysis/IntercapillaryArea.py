@@ -12,6 +12,7 @@ means, variances = [], []
 
 f = open("ICD.dat", 'w')
 f.write("File Mean Std\n")
+
 for filename in sys.argv[1:]:
     
     D = IntercapillaryDistanceMap(filename, plotResult=plotResults)
@@ -23,10 +24,6 @@ for filename in sys.argv[1:]:
 
     f.write(f"{filename} {mean} {std}\n")
     
-    
-
 mean = array(means).mean()
-# std  = sum(variances)**.5
 std = array(means).std()
 print(u'Mean\u00B1std of intercapillary distance out of', count, 'images (in microns):', mean, u"\u00B1", std)
-

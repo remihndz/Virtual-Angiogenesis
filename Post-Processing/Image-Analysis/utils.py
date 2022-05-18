@@ -3,6 +3,7 @@ from PIL import Image, ImageOps
 from scipy.ndimage import distance_transform_edt
 import cv2 as cv # Requires opencv-contrib-python for the thinning function
 
+
 # Other
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,6 +19,7 @@ def IntercapillaryDistanceMap(filename, plotResult=False):
     img = ImageOps.grayscale(Image.open(filename))
     img = img.point( lambda p: 255 if p > threshold else 0)
     img.convert('1')
+
     # Crop the image to the edges of the FOV
     imgBox = img.getbbox()
     img = np.array(img.crop(imgBox))
@@ -174,7 +176,6 @@ def FractalDimension(img, threshold=15.0):
         counts.append(boxcount(img, size))
         
     # Fit the successive log(sizes) with log (counts)
-    print(sizes, counts)
     coeffs = np.polyfit(np.log(sizes), np.log(counts), 1)
     D = coeffs[0]
     
@@ -189,7 +190,6 @@ def FractalDimension(img, threshold=15.0):
     return -D
 
 
-
 def FractalDimensionMap(img, w, threshold=0.0):
     
     # Only for grayscale images
@@ -200,9 +200,6 @@ def FractalDimensionMap(img, w, threshold=0.0):
 
     # Transform img into a binary array
     img = (img > threshold).astype(int) # Vessels in black, background in white
-    # plt.imshow(img, cmap=plt.cm.gray_r)
-    # plt.show()
-
     # From https://github.com/rougier/numpy-100 (#87)
     def boxcount(img, k):
         S = np.add.reduceat(
@@ -239,6 +236,7 @@ def FractalDimensionMap(img, w, threshold=0.0):
             return 0
         if D > 0:
             return 0
+
         return -D
 
     

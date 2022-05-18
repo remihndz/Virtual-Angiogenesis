@@ -7,11 +7,11 @@ import matplotlib.pyplot as plt
 from utils import FractalDimensionMap
 import PIL.Image  
 
+
 threshold = 0
 
 D = []
 for imgFile in sys.argv[1:]:
-    # img = imread(imgFile)
     img = PIL.Image.open(imgFile)
     imgBox = img.getbbox()
     img = img.crop(imgBox)
@@ -33,6 +33,3 @@ for imgFile in sys.argv[1:]:
 
 D = np.array(D)
 print('Mean and standard deviation:', D.mean(), D.std())
-
-
-

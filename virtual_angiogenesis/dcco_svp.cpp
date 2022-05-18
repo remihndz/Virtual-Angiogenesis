@@ -54,7 +54,12 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   GeneratorData *genData = new GeneratorData(160, nFail, l_lim_fr, perfusion_area_factor,
 					      close_neighborhood_factor, 0.25, Delta_nu, 0, false,
 					      costEstimator);
-					      
+
+  GeneratorData *gen_data_stage2 = new GeneratorData(160, N_fail, l_lim_fr, perfusion_area_factor,
+					      1.0, 0.25, Delta_nu, 0, false,
+					      costEstimator);
+    
+  
 
   // Domain definition for stage 1
   DomainNVR *domain_1 = new DomainNVR(Hull, NVR1, nDraw, seed, genData);
@@ -64,6 +69,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
 
   // Domain definition for stage 2
   DomainNVR *domain_2 = new DomainNVR(Hull, NVR2, nDraw, seed, genData);
+
   domain_2->setIsConvexDomain(true);
   domain_2->setMinBifurcationAngle(theta_min);
   cout << "Domain 2 generated." << endl;
@@ -230,7 +236,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
 
 int main(int argc, char *argv[])
 {
-  #pragma omp parallel
+#pragma omp parallel
   {
     cout << "Thread " << omp_get_thread_num() << " running." << endl;
   }

@@ -17,6 +17,7 @@ from sys import platform as _platform
 import vtkmodules.all as vtk
 from PIL import Image
 
+
 if _platform=='linux':
     file_names = sys.argv[1:]
 else:
@@ -61,6 +62,7 @@ for file_name in file_names:
     actor.SetMapper(mapper)
     actor.GetProperty().EdgeVisibilityOn()
     actor.GetProperty().SetLineWidth(0.0)
+
     actor.GetProperty().SetColor(colors.GetColor3d("MistyRose"))
     
     backface = vtk.vtkProperty()
@@ -75,6 +77,7 @@ for file_name in file_names:
     # Create the RendererWindow
     renderer_window = vtk.vtkRenderWindow()
     renderer_window.SetSize(640, 480)
+
     renderer_window.AddRenderer(renderer)
     
     w2if = vtk.vtkWindowToImageFilter()
@@ -91,13 +94,12 @@ for file_name in file_names:
     imageBox = img.getbbox()
     croppedImg = img.crop(imageBox)
     croppedImg.save(file_name_base + '.png')
-    
+
     # Create the RendererWindowInteractor and display the vtk_file
     # interactor = vtk.vtkRenderWindowInteractor()
     # interactor.SetRenderWindow(renderer_window)
     # interactor.Initialize()
     # interactor.Start()
 
-    renderer.RemoveAllViewProps()
-    
+    renderer.RemoveAllViewProps()    
     print('File ', file_name, 'saved as', file_name_base + '.png')

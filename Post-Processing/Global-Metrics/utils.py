@@ -15,8 +15,6 @@ def ReadCCO(ccoFileName):
         row = f.readline()
         # print('Reading', row.strip(), '...')
         nVessels = int(f.readline())
-        # print("Reading", ccoFileName, "with", nVessels, "vessels in the tree (including root).")
-        # print(nVessels, "vessels in the tree.")
 
         vessels = {}
         for i in range(nVessels):
@@ -195,6 +193,7 @@ def StatisticsMultipleTrees(ccoFiles, domainAreaInCm=0.09, upToStage=100):
     VAD, VPI, VDI, VCI, VSD, VBC = [], [], [], [], [], []
     for ccoFile in ccoFiles:
         vessels, connectivity = ReadCCO(ccoFile)
+
         vesselDensity, vesselCount = VesselAreaDensity(vessels, domainAreaInCm, upToStage)
         VAD.append(vesselDensity)            
         VPI.append(VesselPerimeterIndex(vessels, domainAreaInCm, upToStage)[0])
@@ -205,5 +204,6 @@ def StatisticsMultipleTrees(ccoFiles, domainAreaInCm=0.09, upToStage=100):
         print(f"For {ccoFile}, {vesselCount} out of {len(vessels)} ({int(vesselCount/len(vessels)*100)}%), vessels included in the analysis.")
                    
     return np.array(VAD), np.array(VPI), np.array(VDI), np.array(VCI), np.array(VSD), np.array(VBC)
+
         
         

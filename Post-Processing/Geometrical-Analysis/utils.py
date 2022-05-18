@@ -9,6 +9,7 @@ import copy
 
 def ReadTree(ccoFile):
     print("Reading", ccoFile)
+
     with open(ccoFile, 'r') as f:
         # Unused '*Tree' information
         row = f.readline()
@@ -28,6 +29,7 @@ def ReadTree(ccoFile):
         
         row = f.readline()
         f.readline().strip()
+
         treeConnectivity = []
         for i in range(nVessels):
             row = (f.readline()).split()
@@ -297,8 +299,7 @@ def BifurcationDiameterRatio(treeData, treeConnectivity, plot=False):
         plt.show()
 
     return [a for a in dsdl], [a for a in dldp]
-
-
+  
 def VBC(treeData, treeConnectivity, plot=False):
 
     # Copy the radii, sorted by vessel ID
@@ -338,6 +339,3 @@ def VBC(treeData, treeConnectivity, plot=False):
         
     return VBC
                 
-    
-
-    

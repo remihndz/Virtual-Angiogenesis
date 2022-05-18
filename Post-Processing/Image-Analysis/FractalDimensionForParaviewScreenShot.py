@@ -5,6 +5,7 @@ import numpy as np
 from matplotlib.pyplot import imread
 import matplotlib.pyplot as plt
 from utils import FractalDimensionForParaviewScreenShot, FractalDimensionMap
+
  
 
 threshold = 0
@@ -24,8 +25,3 @@ for imgFile in sys.argv[1:]:
     
 D = np.array(D)
 print('Mean and standard deviation:', D.mean(), D.std())
-
-# LocalFractalDimensionMap(img, w=1)
-# FractalDimensionMap(img, w=2)
-# FractalDimensionMap(img, w=3)
-
