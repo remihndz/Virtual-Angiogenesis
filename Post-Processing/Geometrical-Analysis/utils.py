@@ -23,7 +23,7 @@ def ReadTree(ccoFile):
         treeData = []
         for i in range(nVessels):
             row = (f.readline()).split() # Split all columns in a list
-            Id, xProx, xDist, r, q, stage = int(row[0]), row[1:4], row[4:7], float(row[12]), float(row[10]), int(row[-1])
+            Id, xProx, xDist, r, q, stage = int(row[0]), row[1:4], row[4:7], float(row[12]), float(row[13]), int(row[-1])
             l = sum([(float(a)-float(b))**2 for a,b in zip(xProx, xDist)])**.5
             treeData.append([Id, r*10, l*10, q, stage]) # Convert to mm
         
@@ -170,7 +170,8 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
 
     dataRadius = np.zeros((maxOrder, len(orderedTree)))
     dataLength = np.zeros((maxOrder, len(orderedTree)))
-    dataVolume   = np.zeros((maxOrder, len(orderedTree)))
+    dataVolume = np.zeros((maxOrder, len(orderedTree)))
+    dataFlow   = np.zeros((maxOrder, len(orderedTree)))
     dataAspectRatio   = np.zeros((maxOrder, len(orderedTree)))
     orderDistribution = np.zeros((maxOrder,))
     
@@ -179,6 +180,7 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
         i,j = int(order)-1, int(Id)
         dataRadius[i, j] = radius
         dataLength[i, j] = length
+        dataFlow[i,j]    = flow
         dataVolume[i, j] = radius*radius*length*np.pi
         dataAspectRatio[i, j] = length/radius
         orderDistribution[i] += 1
@@ -187,6 +189,8 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
     stdRadius  = np.std(dataRadius, axis = 1, where=dataRadius>0)
     meanLength = np.mean(dataLength, axis = 1, where=dataRadius>0)
     stdLength  = np.std(dataLength, axis = 1, where=dataRadius>0)
+    meanFlow   = np.mean(dataFlow, axis = 1, where=dataRadius>0)
+    stdFlow    = np.std(dataFlow, axis = 1, where=dataRadius>0)
     meanVolume = np.mean(dataVolume, axis = 1, where=dataRadius>0)
     stdVolume  = np.std(dataVolume, axis = 1, where=dataRadius>0)
     meanAspectRatio = np.mean(dataAspectRatio, axis = 1, where=dataRadius>0)
@@ -204,9 +208,9 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
     ax2.errorbar(x, meanLength, stdLength, marker='s')
     ax2.set_yscale(scale)
     ax2.set_title('Length vs. Strahler order')
-    ax3.errorbar(x, meanVolume, stdVolume, marker='s')
+    ax3.errorbar(x, meanFlow, stdFlow, marker='s')
     ax3.set_yscale(scale)
-    ax3.set_title('Volume vs. Strahler order')
+    ax3.set_title('Flow vs. Strahler order')
     ax4.errorbar(x, meanAspectRatio, stdAspectRatio, marker='s')
     ax4.set_yscale(scale)
     ax4.set_title('Aspect ratio vs. Strahler order')
@@ -214,16 +218,16 @@ def PlotTreeStatistics(orderedTree, outputImageFile=None):
     fig2, axes = plt.subplots(2,2, sharex='col')
     fig2.set_figheight(7.2)
     fig2.set_figwidth(8.8)
-    scale = 'linear'
+    scale = 'log'
     axes[0,0].boxplot(dataRadius.transpose())
     axes[0,0].set_yscale(scale)
     axes[0,0].set_title('Radius vs. Strahler order')
     axes[0,1].boxplot(dataLength.transpose())
     axes[0,1].set_yscale(scale)
     axes[0,1].set_title('Length vs. Strahler order')
-    axes[1,0].boxplot(dataVolume.transpose())
+    axes[1,0].boxplot(dataFlow.transpose())
     axes[1,0].set_yscale(scale)
-    axes[1,0].set_title('Volume vs. Strahler order')
+    axes[1,0].set_title('Flow vs. Strahler order')
     axes[1,1].boxplot(dataAspectRatio.transpose())
     axes[1,1].set_yscale(scale)
     axes[1,1].set_title('Aspect ratio vs. Strahler order')
@@ -251,7 +255,7 @@ def BifurcationDiameterRatio(treeData, treeConnectivity, plot=False):
     for Id, parentId, children in treeConnectivity:
         if parentId>0 and len(children)==2: # parentId=-1 if its root
             
-            dp = copyData[parentId][1]
+            dp = copyData[Id][1]
             dchildren = [copyData[children[0]][1], copyData[children[1]][1]]
             ds = min(dchildren)
             dl = max(dchildren)

@@ -48,7 +48,6 @@ for filename in glob.iglob(patientFolder + '/Vessel*'):
                 VesselsConn.append([vtkSegmentId, vtkSegmentId-1])
             vtkSegmentId+=1
             xProx = xDist
-
 LinkToRootTree(VesselsData, VesselsConn, RootData, RootConn)
 patientName = input("Name of the output cco file (without extension):")
 SaveTree('../' + patientName+'.cco', VesselsData, VesselsConn, RootData, RootConn)

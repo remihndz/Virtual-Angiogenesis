@@ -12,6 +12,7 @@
 #include<fstream>
 #include<ctime>
 #include<omp.h>
+#include<random>
 
 // VItA Libs
 #include<structures/tree/AbstractCostEstimator.h>
@@ -53,12 +54,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   AbstractCostEstimator *costEstimator = FSprout;
   GeneratorData *genData = new GeneratorData(160, nFail, l_lim_fr, perfusion_area_factor,
 					      close_neighborhood_factor, 0.25, Delta_nu, 0, false,
-					      costEstimator);
-
-  GeneratorData *gen_data_stage2 = new GeneratorData(160, N_fail, l_lim_fr, perfusion_area_factor,
-					      1.0, 0.25, Delta_nu, 0, false,
-					      costEstimator);
-    
+					      costEstimator);    
   
 
   // Domain definition for stage 1
@@ -153,7 +149,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   domain->setIsConvexDomain(false);
   domain->setMinBifurcationAngle(theta_min);
   // Add additional vessels until criterion is reached
-  double targetICD = 0.024;
+  double targetICD = 0.025;
   int iter = 1, iterMax = 15;
 
   cout << "ICD at baseline: " << ICD << "\t Target ICD: " << targetICD << endl;
@@ -161,7 +157,7 @@ void Vascularise(string outputFileName, string rootTreeFileName, string Hull,
   do
     {
       time_t startTime, endTime;
-      int n = 500;		// Increment to the number of terminal vessels
+      int n = 200;		// Increment to the number of terminal vessels
 
       delete stagedDomain;
       stagedDomain = new StagedDomain();
@@ -311,6 +307,14 @@ int main(int argc, char *argv[])
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
   AbstractConstraintFunction<double, int> *gam {new ConstantConstraintFunction<double, int>(stod(line))};
+
+  // // If you want a gamma picked from a normal distribution
+  // std::random_device rd{};
+  // std::mt19937 gen{rd()};
+  // std::normal_distribution<double> d{stod(line), 0.045};
+  // double val = d(gen);
+  // AbstractConstraintFunction<double, int> *gam {new ConstantConstraintFunction<double, int>(val)};
+  // cout << "Gamma = " << val << endl;
 
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);

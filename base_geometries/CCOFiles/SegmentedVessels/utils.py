@@ -84,13 +84,14 @@ def LinkToRootTree(VesselsData, VesselsConn, RootData, RootConn):
         if VesselsConn[i][1] == -2: # Identifies a vessel that needs to be connected
 
             xDist = vessel_segment[4:7]
+            #print(f'Segment {vessel_segment[0]} is the first segment of a segmented vessel and is located at {xDist[:-1]}')
             distToxDist = []
             
             for segment in RootData:
                 if not segment[0] in UsedSegments:
                     xProx = segment[4:7]
                     distToxDist.append((dist(xDist, xProx), segment[0]))
-
+            
             distToxDist = sorted(distToxDist, key=itemgetter(0))
             IdClosestNeighbour = distToxDist[0][1]
             links.append([i, IdClosestNeighbour])
