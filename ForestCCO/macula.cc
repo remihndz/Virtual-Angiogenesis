@@ -19,14 +19,15 @@ int main(int argc, char *argv[]) {
   int numberOfTrees = 2,
     numberOfConnections = 20,	// Useless?
     maximumNumberOfAttempts = 10,
-    numberOfTerminals = 200;
+    numberOfTerminals = 5000;
 
   // Domain parameters
   std::string vtkFileName = "Geometry/SVP";
   double AreaFAZ = 0.3e-6;	// The area of the FAZ, in m^2, from literature
   double innerRadius = sqrt(AreaFAZ/M_PI), // The radius of the FAZ (a circle), in m
     outerRadius = 3e-3,		// The radius of the FOV, in m
-    inletFlow = 3.611e-6,	// 3.61 muL/min = 3.1e-7 L/min
+    inletFlow = 3.611e-9,	// 3.61 muL/min = 3.1e-7 L/min
+    inletPressure = 4.0e3,	// ~4000 Pa = 30mmHg
     outletPressure = 2.133e3,   // 2133.16 N/m^2 (Pa) = 16 mm Hg
     outputUnit = 1e6;	        // 1e6 for microns
 
@@ -83,7 +84,8 @@ int main(int argc, char *argv[]) {
 	trees[i]->setPerfusionFlow(targetPerfArt * inletFlow);
       else
 	trees[i]->setPerfusionFlow(targetPerfVein * inletFlow);
-      
+
+      trees[i]->setPerfusionPressure(inletPressure);
       trees[i]->setTerminalPressure(outletPressure);
 
     }

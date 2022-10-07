@@ -1,7 +1,7 @@
 # Variable Definitions
 CC = g++
 FLAGS = -lm --std=c++17
-SRC = ~/ForestCCO/src
+SRC = /mnt/c/Users/rhernand/Desktop/MyCodes/ForestCCO/src
 SRC_REMI = ./Geometry/src
 INCLUDE_REMI = ./Geometry/include
 EXTENSION = cc
