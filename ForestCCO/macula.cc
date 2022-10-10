@@ -19,14 +19,14 @@ int main(int argc, char *argv[]) {
   int numberOfTrees = 2,
     numberOfConnections = 20,	// Useless?
     maximumNumberOfAttempts = 10,
-    numberOfTerminals = 5000;
+    numberOfTerminals = 100;
 
   // Domain parameters
   std::string vtkFileName = "Geometry/SVP";
   double AreaFAZ = 0.3e-6;	// The area of the FAZ, in m^2, from literature
   double innerRadius = sqrt(AreaFAZ/M_PI), // The radius of the FAZ (a circle), in m
     outerRadius = 3e-3,		// The radius of the FOV, in m
-    inletFlow = 3.611e-9,	// 3.61 muL/min = 3.1e-7 L/min
+    inletFlow = 3.611e-7,	// 3.61 muL/min = 3.61e-7 L/min
     inletPressure = 4.0e3,	// ~4000 Pa = 30mmHg
     outletPressure = 2.133e3,   // 2133.16 N/m^2 (Pa) = 16 mm Hg
     outputUnit = 1e6;	        // 1e6 for microns
@@ -131,6 +131,71 @@ int main(int argc, char *argv[]) {
       treeFile->save("svp_"+std::to_string(i)+".vtk");
 
     }
+
+
+  /* ICP layer */
+  double depth = 37.78, // In microns, the average length of connecting vessels (SVC to ICP)
+    connectingVesselMinimumRadius = 100, // Defines a 'small' arteriole that can dive into ICP
+    connectingVesselMaximumRadius = 150; // Defines a 'small' arteriole that can dive into ICP
+        
+  numberOfTerminals = 1000;
+  std::vector<Segment*> connectingVessels;
+  std::vector<double> inflows;
+
+  Domain *domainICP;
+  DomainFile *domainFileICP;
+  TreeModel **treesICP;
+  TreeFile *treeFileICP;
+
+  // Find connecting points
+  Segment *segment;
+  Tree    *tree;
+  for (int i=0; i<numberOfTrees; i++) {
+    for (int s = trees[i]->begin(); s < trees[i]->end(); s++) {
+      segment = trees[i]->segment(s);
+      double radius;
+      if (!trees[i]->isTerminal(s)) {
+	// Is the left descendent a potential candidate for connecting with the ICP?
+	radius = trees[i]->radius(segment->left());
+	if (radius < connectingVesselMaximumRadius and radius > connectingVesselMinimumRadius) {
+	  Point distPoint = trees[i]->distalPoint(segment->left()),
+	    proxPoint = trees[i]->proximalPoint(segment->left());
+	  // The middle point of the candidate segment
+	  Point *seed = new Point(new double[3]{(distPoint.x()-proxPoint.x())/2.0,
+	      (distPoint.y()-proxPoint.y())/2.0,
+	      (distPoint.z()-proxPoint.z())/2.0 - depth}, 3);
+	  connectingVessels.push_back(new Segment(*seed, 3));
+	}
+	
+	// Is the right descendent a potential candidate for connecting with the ICP?
+	radius = trees[i]->radius(segment->right());
+	if (radius < connectingVesselMaximumRadius and radius > connectingVesselMinimumRadius) {
+	  Point distPoint = trees[i]->distalPoint(segment->right()),
+	    proxPoint = trees[i]->proximalPoint(segment->right());
+	  // The middle point of the candidate segment
+	  Point *seed = new Point(new double[3]{(distPoint.x()-proxPoint.x())/2.0,
+	      (distPoint.y()-proxPoint.y())/2.0,
+	      (distPoint.z()-proxPoint.z())/2.0 - depth}, 3);
+	  connectingVessels.push_back(new Segment(*seed, 3));
+	}
+
+      }
+    }
+  }
+
+  // CompetingOptimizedArterialTrees *coatICP = new CompetingOptimizedArterialTrees(
+  //   domainFile,
+  //   trees,
+  //   numberOfTrees,
+  //   numberOfTerminals,
+  //   stageCoefficient,
+  //   inflows,
+  //   radiusExpoent,
+  //   lengthExpoent,
+  //   0.0,
+  //   0.0,
+  //   M_PI/4.0
+  // );
   
   return 0;
 }

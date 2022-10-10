@@ -13,7 +13,7 @@ void CapillaryPlexus(std::string VTKFilename,
 		     std::vector<Point> Seeds,
 		     int    numberOfPoints) {
 
-  int numberOfSeeds = vector.size();
+  int numberOfSeeds = Seeds.size();
   double theta,
     radius,
     x[numberOfPoints],
