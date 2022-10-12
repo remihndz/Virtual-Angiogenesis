@@ -19,16 +19,16 @@ int main(int argc, char *argv[]) {
   int numberOfTrees = 2,
     numberOfConnections = 20,	// Useless?
     maximumNumberOfAttempts = 10,
-    numberOfTerminals = 100;
+    numberOfTerminals = 2000;
 
   // Domain parameters
   std::string vtkFileName = "Geometry/SVP";
   double AreaFAZ = 0.3e-6;	// The area of the FAZ, in m^2, from literature
   double innerRadius = sqrt(AreaFAZ/M_PI), // The radius of the FAZ (a circle), in m
     outerRadius = 3e-3,		// The radius of the FOV, in m
-    inletFlow = 3.611e-7,	// 3.61 muL/min = 3.61e-7 L/min
-    inletPressure = 4.0e3,	// ~4000 Pa = 30mmHg
-    outletPressure = 2.133e3,   // 2133.16 N/m^2 (Pa) = 16 mm Hg
+    inletFlow = 1.88e-10,	// 3.61 muL/min = 3.61e-7 L/min
+    inletPressure = 5.186241e3,	// ~4000 Pa = 30mmHg
+    outletPressure = 3.053083e3,   // 2133.16 N/m^2 (Pa) = 16 mm Hg
     outputUnit = 1e6;	        // 1e6 for microns
 
   std::cout << "Generating vessels in an annulus with inner radius "
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
   // CCO parameters
   double targetPerfusionFlow[numberOfTrees],
     stageCoefficient = 0.1,
-    radiusExpoent = 2.75,
+    radiusExpoent = 2.85,
     lengthExpoent = 1.0;
 
   for (int i=0; i<numberOfTrees; i++)
