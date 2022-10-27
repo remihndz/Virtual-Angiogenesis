@@ -29,7 +29,12 @@ link_directories(${VITA_LIBRARY_DIRS} ${VTK_LIBRARY_DIRS})
 add_executable(dcco_svp dcco_svp.cpp)
 
 # link libraries
-target_link_libraries(dcco_svp VItA ${VTK_8_1_libs})
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(dcco_svp PUBLIC VItA ${VTK_8_1_libs} ${OpenCV_LIBS} OpenMP::OpenMP_CXX)
+else()
+  target_link_libraries(dcco_svp VItA ${VTK_8_1_libs} ${OpenCV_LIBS})
+endif()
 
 # add all include directories needed for compilation
 target_include_directories(dcco_svp PUBLIC
