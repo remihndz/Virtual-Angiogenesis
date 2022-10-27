@@ -15,7 +15,7 @@ for filename in sys.argv[1:]:
     polydata
     writer = vtk.vtkPolyDataWriter()
     writer.SetFileVersion(42)
-    writer.SetFileName(filename+'.vtk')
+    writer.SetFileName(filename[:-4] +'.vtp')
     writer.SetInputData(polydata)
     writer.Update()
     writer.Write()
