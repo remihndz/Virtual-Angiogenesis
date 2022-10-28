@@ -23,6 +23,7 @@
 #include<structures/domain/SimpleDomain2D.h>
 #include<structures/domain/NormalDistributionGenerator.h>
 #include<structures/vascularElements/SingleVessel.h>
+#include<structures/tree/VolumetricCostEstimator.h>
 #include<structures/tree/AdimSproutingVolumetricCostEstimator.h>
 #include<structures/tree/SproutingVolumetricCostEstimator.h>
 #include<creators/ParallelepipedCreator.h>
@@ -32,8 +33,13 @@ using namespace std;
 string rootTreeFilename = "CRA.cco";
 double q0 {15.0 * 0.001/60.0};	// Converts muL/min to cm^3/s
 double r0 {0.07};		// mm
-point x0 {0.0, 0.0, 0.0};	// mm
+point x0 {0.26, 0.0, 0.0};	// mm
 double p0 {50 * 133.3224};  // mmHg*133.3224 = Pa, should be consistent with pressure unit 
+
+string outputFilename = "../Results/2DRetina",
+  hullVTKFilename = "../vtkFiles/Results/2D/Hull.vtk";
+vector<string> NVRVTKFilenames({"../vtkFiles/Results/2D/FAZ.vtk"});
+
 
 void Vascularise(string outputFilename,
 		 string hullVTKFilename,
@@ -85,13 +91,15 @@ void Vascularise(string outputFilename,
 						   closeNeighborhoodFactor, // Factor that increase the neighborhood to search nearest neighbors.
 						   0.1, // Factor to scale the dLim to the middle point of the new vessel to avoid close neighbors.
 						   DeltaNu, // Number of bifurcation sites tested in the optimization process is given by nBifurcationTest * ( nBifurcationTest - 1 ). (default 8)
-						   1,	   // Functionality of the vessel generated, important for Object trees.
+						   0,	   // Functionality of the vessel generated, important for Object trees.
 						   false, // Indicates if dLimCorrectionFactor must be resetted to 1 when the stage begins.
 						   costEstimator); // Cost estimator for the given stage
   DomainNVR *domain = new DomainNVR(hullVTKFilename, NVRVTKFilenames,
 				    nDraw, seed, generatorData);
   domain->setIsConvexDomain(true);
-  stagedDomain->addStage(nTerms[0], domain);
+  domain->setIsBifPlaneContrained(false);
+  domain->setMinBifurcationAngle(0.0);
+  stagedDomain->addStage(nTerms[0]+1, domain);
 
   cout << "Staged domain initiated." << endl;
 
@@ -103,9 +111,9 @@ void Vascularise(string outputFilename,
   }
   is_root_tree_correct.close();
   
-  SingleVesselCCOOTree *tree = new SingleVesselCCOOTree(rootTreeFilename, {new GeneratorData()},
-							gammas[0], deltas[0], etas[0]
-							);
+  SingleVesselCCOOTree *roottree = new SingleVesselCCOOTree(rootTreeFilename, generatorData,
+							    gammas[0], deltas[0], etas[0]
+							    );
 
   // SingleVesselCCOOTree *tree = new SingleVesselCCOOTree(x0, r0, q0,
   // 							gammas[0], deltas[0], etas[0],
@@ -115,22 +123,23 @@ void Vascularise(string outputFilename,
   
   
   VTKObjectTreeNodalWriter *treeWriter = new VTKObjectTreeNodalWriter();
-  tree->print();
-  tree->save("RootTree.cco");
-  treeWriter->write("RootTree.vtp", tree);
+  roottree->print();
+  roottree->save("RootTree.cco");
+  treeWriter->write("RootTree.vtp", roottree);
   
-  tree->setIsInCm(true);
-  tree->setCurrentStage(0);
+  roottree->setIsInCm(true);
+  roottree->setCurrentStage(0);
 
-  int currentStage{tree->getCurrentStage()};
+  int currentStage{roottree->getCurrentStage()};
   cout << "Root tree successfully loaded... ";
   cout << "Current stage is: " << currentStage << endl; 
   
-  long long int nTermTotal = tree->getNTerms();
+  long long int nTermTotal = roottree->getNTerms();
+  cout << "Found " << nTermTotal << " terminal vessels in the root tree." << endl;
   for (int nTerm: nTerms)
     nTermTotal += nTerm;
   
-  StagedFRROTreeGenerator *tree_generator = new StagedFRROTreeGenerator(stagedDomain, tree,
+  StagedFRROTreeGenerator *tree_generator = new StagedFRROTreeGenerator(stagedDomain, roottree,
 									nTermTotal,
 									gammas,
 									deltas,
@@ -140,7 +149,7 @@ void Vascularise(string outputFilename,
   cout << "Staged tree generator initialised." << endl;
   
   cout << "Starting tree generation." << endl;
-  tree = {(SingleVesselCCOOTree *) tree_generator->resume(200, "./")};
+  SingleVesselCCOOTree *tree = static_cast<SingleVesselCCOOTree *>(tree_generator->resume(200, "./"));
   cout << "Finished generating the tree." << endl;
 
   cout << "Saving the results..." << endl;
@@ -159,17 +168,13 @@ int main(int argc, char *argv[])
   }
 
 
-  
-  string outputFilename = "../Results/2DRetina",
-    hullVTKFilename = "../vtkFiles/Results/2D/Hull.vtp";
-  vector<string> NVRVTKFilenames({"../vtkFiles/Results/2D/FAZ.vtp"});
-  vector<long long int> nTerms = {100};
+  vector<long long int> nTerms = {1000};
   vector<AbstractConstraintFunction<double, int>*> gammas = {new ConstantConstraintFunction<double, int>(3.0)},
     deltas = {new ConstantConstraintFunction<double, int>(0.8)},
     etas = {new ConstantConstraintFunction<double, int>(3.6)};
   double thetaMin {0}, // In radian?
     perfusionAreaFactor {.9},
-    closeNeighborhoodFactor {5.0},
+    closeNeighborhoodFactor {50.0},
     lLimFactor {0.9};
   
   // Consecutive attempts to generate a point - nFail
