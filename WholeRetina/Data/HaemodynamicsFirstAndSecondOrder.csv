@@ -1,0 +1,5 @@
+Bifurcation,Vessel type,Diameter,Vmax (mm/s),Blood flow (L/min),Vascular resistance (mmHg.min/L),WSR (/s),Apparent viscosity at WSR (cP),WSS (dyne/cm²)
+0,Artery,107.9,41.1,11.4,5.3,1539,3.52,54
+1,Artery,100.6,27.7,6.6,-,1119,3.6,40.2
+0,Vein,147.3,23.3,12.2,-,632,3.82,24.1
+1,Vein,127.5,19.4,7.6,-,606,3.82,23.2
