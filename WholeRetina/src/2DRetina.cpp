@@ -15,6 +15,7 @@
 #include<core/GeneratorData.h>
 #include<core/StagedFRROTreeGenerator.h>
 #include<constrains/ConstantConstraintFunction.h>
+#include<constrains/ConstantPiecewiseConstraintFunction.h>
 #include<structures/tree/SingleVesselCCOOTree.h>
 #include<structures/tree/AbstractObjectCCOTree.h>
 #include<structures/vascularElements/AbstractVascularElement.h>
@@ -27,21 +28,22 @@
 #include<structures/tree/AdimSproutingVolumetricCostEstimator.h>
 #include<structures/tree/SproutingVolumetricCostEstimator.h>
 #include<creators/ParallelepipedCreator.h>
-
+#include<creators/CylinderCreator.h>
 
 using namespace std;
-string rootTreeFilename = "CRA.cco";
-double q0 {15.0 * 0.001/60.0};	// Converts muL/min to cm^3/s
-double r0 {0.07};		// mm
-point x0 {0.26, 0.0, 0.0};	// mm
-double p0 {50 * 133.3224};  // mmHg*133.3224 = Pa, should be consistent with pressure unit 
+// string rootTreeFilename = "CRA.cco";
+// double q0 {15.0 * 0.001/60.0};	// Converts muL/min to cm^3/s
+// double r0 {0.007};		// mm
+// point x0 {0.26, 0.0, 0.0};	// mm
+// double p0 {50 * 133.3224};  // mmHg*133.3224 = Pa, should be consistent with pressure unit 
 
-string outputFilename = "../Results/2DRetina",
-  hullVTKFilename = "../vtkFiles/Results/2D/Hull.vtk";
-vector<string> NVRVTKFilenames({"../vtkFiles/Results/2D/FAZ.vtk"});
+// string outputFilename = "../Results/2DRetina",
+//   hullVTKFilename = "../vtkFiles/Results/2D/Hull.vtp";
+// vector<string> NVRVTKFilenames({"../vtkFiles/Results/2D/FAZ.vtp"});
 
 
 void Vascularise(string outputFilename,
+		 string rootTreeFilename,
 		 string hullVTKFilename,
 		 vector<string> NVRVTKFilenames,
 		 vector<long long int> nTerms,
@@ -162,20 +164,124 @@ void Vascularise(string outputFilename,
 
 int main(int argc, char *argv[])
 {
-#pragma omp parallel
-  {
-    cout << omp_get_num_threads() << " threads running." << endl;
+  cout << omp_get_num_threads() << " threads running." << endl;
+
+  // Read the configuration file passed as command line argument
+  string ConfigurationFileName = argv[1];
+  ifstream config;
+  config.open(ConfigurationFileName);
+  if (!config){
+    cerr << "Error: parameter file " << ConfigurationFileName
+	 << " could not be opened." << endl;
+    exit(1);
   }
+  else
+    cout << "Reading parameters from " << ConfigurationFileName << endl;
 
+  // Reading input and output files and parameters
+  
+  // Output file
+  string line;
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  getline(config, line);
+  string outputFilename {line};
+  
+  // Hull
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  getline(config, line);
+  string hullVTKFilename {line};
+  cout << "Hull file: " << hullVTKFilename << endl;				       
 
-  vector<long long int> nTerms = {1000};
-  vector<AbstractConstraintFunction<double, int>*> gammas = {new ConstantConstraintFunction<double, int>(3.0)},
-    deltas = {new ConstantConstraintFunction<double, int>(0.8)},
-    etas = {new ConstantConstraintFunction<double, int>(3.6)};
-  double thetaMin {0}, // In radian?
-    perfusionAreaFactor {.9},
-    closeNeighborhoodFactor {50.0},
-    lLimFactor {0.9};
+  // Domain 1
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  getline(config, line);
+  int nNVR {stoi(line)};  
+  vector<string> NVRVTKFilenames;
+  cout << "The " << nNVR << " non vascular regions for domain 1 are: ";
+  for (int i = 0; i < nNVR; i++){
+    getline(config, line);
+    NVRVTKFilenames.push_back(line);
+    cout << NVRVTKFilenames[i] << " ";
+  }
+  cout << endl;
+
+  // Root tree
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  getline(config, line);
+  string inputCCO {line};
+  cout << "Root tree file: " << inputCCO << endl;
+  
+  // Other simulation parameters
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  getline(config, line);
+  long long int nTerms {stoll(line)};
+  
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  getline(config, line);
+  double lLimFactor {stod(line)};
+
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  getline(config, line);
+  AbstractConstraintFunction<double, int> *gamma {new ConstantConstraintFunction<double, int>(stod(line))}; // Murray's law exponent
+
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  getline(config, line);
+  // AbstractConstraintFunction<double, int> *delta {new ConstantConstraintFunction<double, int>(stod(line))}; // Symmetry ratio
+  AbstractConstraintFunction<double, int> *delta {new ConstantPiecewiseConstraintFunction<double, int>({0.0, 0.4}, {0, 5})};
+  
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  getline(config, line);
+  AbstractConstraintFunction<double, int> *eta {new ConstantConstraintFunction<double, int>(stod(line))}; // viscosity
+
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  getline(config, line);
+  double viscTolerance {stod(line)};
+
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  getline(config, line);
+  double fractionOfPi {stod(line)};
+  double thetaMin = fractionOfPi * M_PI;
+  
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  getline(config, line);
+  double perfusionAreaFactor {stod(line)};
+
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  getline(config, line);
+  double closeNeighborhoodFactor {stod(line)};
+
+  config.ignore(numeric_limits<streamsize>::max(), '\n');
+  double q0, p0, rEyeball;
+  config >> q0 >> p0;
+  config >> rEyeball;
+  cout << "Inlet flow and pressure: " << q0 << " " << p0 << " in a retina of radius " << rEyeball << "cm" << endl;
+  
+  
+  // Copying the config file in the output folder
+  string root_results {outputFilename.substr(0, outputFilename.find_last_of("/"))};
+  string filename {ConfigurationFileName.substr(ConfigurationFileName.find_last_of("/") + 1)};
+  string command {"mkdir -p " + root_results};
+  const int dir_err = system(command.c_str());
+  if (-1 == dir_err)
+    {
+      printf("Error creating directory!\n");
+      exit(1);
+    }
+  command = {"cp " + ConfigurationFileName + " " + root_results + "/" + filename};
+  const int copy_err = system(command.c_str());
+  if (-1 == copy_err)
+    {
+      printf("Error copying the config file!\n");
+      exit(1);
+    }
+  
+  cout << "Simulation parameters read successfully." << endl;
+  
+  vector<AbstractConstraintFunction<double, int>*> gammas = {gamma},
+    deltas = {delta},
+    etas = {eta};
   
   // Consecutive attempts to generate a point - nFail
   int nFail = 200;
@@ -185,12 +291,13 @@ int main(int argc, char *argv[])
   int nDraw {10000};
   // Random seed
   long long int seed {time(nullptr)};
-  
 
+  
   Vascularise(outputFilename,
+	      inputCCO,
 	      hullVTKFilename,
 	      NVRVTKFilenames,
-	      nTerms,
+	      {nTerms},
 	      gammas,
 	      deltas,
 	      etas,
