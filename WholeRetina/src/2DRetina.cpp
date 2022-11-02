@@ -83,7 +83,6 @@ void Vascularise(string outputFilename,
 
   //     stagedDomain->addStage(nTerms[i], domains.back());
   //   }
-
   SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
   AbstractCostEstimator *costEstimator = FSprout;
   GeneratorData *generatorData = new GeneratorData(16000, // Levels for tree scaling for each new segment test.
@@ -100,7 +99,7 @@ void Vascularise(string outputFilename,
 				    nDraw, seed, generatorData);
   domain->setIsConvexDomain(true);
   domain->setIsBifPlaneContrained(false);
-  domain->setMinBifurcationAngle(0.0);
+  domain->setMinBifurcationAngle(thetaMin);
   stagedDomain->addStage(nTerms[0]+1, domain);
 
   cout << "Staged domain initiated." << endl;
@@ -229,7 +228,7 @@ int main(int argc, char *argv[])
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
   // AbstractConstraintFunction<double, int> *delta {new ConstantConstraintFunction<double, int>(stod(line))}; // Symmetry ratio
-  AbstractConstraintFunction<double, int> *delta {new ConstantPiecewiseConstraintFunction<double, int>({0.0, 0.4}, {0, 5})};
+  AbstractConstraintFunction<double, int> *delta {new ConstantPiecewiseConstraintFunction<double, int>({0.4, 0.8}, {0, 5})};
   
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
