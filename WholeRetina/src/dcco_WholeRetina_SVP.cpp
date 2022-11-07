@@ -51,10 +51,10 @@ void vascularise(string output_filename, AbstractConstraintFunction<double, int>
     
     // Domain geometry
     string vtkRetina = "../vtkFiles/Results/WholeRetina.vtk";
-    string vtkFAZ    = "../vtkFiles/Results/FAZ.vtk.vtk";
+    string vtkFAZ    = "../vtkFiles/Results/FAZ.vtk";
 
-    string vtkRetinaHull = "../vtkFiles/Results/RetinaHull.vtk.vtk",
-      vtkRetinaNVR = "../vtkFiles/Results/RetinaNVR.vtk.vtk";
+    string vtkRetinaHull = "../vtkFiles/Results/RetinaHull.vtk",
+      vtkRetinaNVR = "../vtkFiles/Results/RetinaNVR.vtk";
     
     // Optimisation parameters
     GeneratorData *gen_data_0 = new GeneratorData(16000, N_fail, l_lim_fr, perfusion_area_factor, close_neighborhood_factor, 0.1, Delta_nu, 1, false);
