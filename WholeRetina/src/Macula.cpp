@@ -30,17 +30,6 @@
 #include<creators/ParallelepipedCreator.h>
 #include<creators/CylinderCreator.h>
 
-using namespace std;
-// string rootTreeFilename = "CRA.cco";
-// double q0 {15.0 * 0.001/60.0};	// Converts muL/min to cm^3/s
-// double r0 {0.007};		// mm
-// point x0 {0.26, 0.0, 0.0};	// mm
-// double p0 {50 * 133.3224};  // mmHg*133.3224 = Pa, should be consistent with pressure unit 
-
-// string outputFilename = "../Results/2DRetina",
-//   hullVTKFilename = "../vtkFiles/Results/2D/Hull.vtp";
-// vector<string> NVRVTKFilenames({"../vtkFiles/Results/2D/FAZ.vtp"});
-
 
 void Vascularise(string outputFilename,
 		 string rootTreeFilename,
@@ -53,41 +42,9 @@ void Vascularise(string outputFilename,
 		 int nDraw, int seed, int nFail, double lLimFactor,
 		 double perfusionAreaFactor, double closeNeighborhoodFactor, int DeltaNu,
 		 double thetaMin)
-{
-  // Here create GeneratorDatas and Domains (one of each for each stage)
-  // TODO: change the input parameters to vectors to have different parameters for each stage
-  vector<GeneratorData*> generators;
-  vector<DomainNVR*> domains;
-  StagedDomain *stagedDomain = new StagedDomain();
-  // Does initializing pointers in a loop work? Or are the objects created deleted after the loop?
-  // for (int i=0; i<nTerms.size(); i++)
-  //   {
-  //     SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
-  //     AbstractCostEstimator *costEstimator = FSprout;
+{  
 
-  //     generators.push_back(new GeneratorData(16000, // Levels for tree scaling for each new segment test.
-  // 					     nFail, // Number of trials before diminish dlim.
-  // 					     lLimFactor, // Factor by which the Dlim constraint diminish after N failed trials.
-  // 					     perfusionAreaFactor, // Factor that scales the perfusion area by which Dlim is computed.
-  // 					     closeNeighborhoodFactor, // Factor that increase the neighborhood to search nearest neighbors.
-  // 					     0.1, // Factor to scale the dLim to the middle point of the new vessel to avoid close neighbors.
-  // 					     DeltaNu, // Number of bifurcation sites tested in the optimization process is given by nBifurcationTest * ( nBifurcationTest - 1 ). (default 8)
-  // 					     1,	   // Functionality of the vessel generated, important for Object trees.
-  // 					     false, // Indicates if dLimCorrectionFactor must be resetted to 1 when the stage begins.
-  // 					     costEstimator)); // Cost estimator for the given stage 
-
-  //     domains.push_back(new DomainNVR(hullVTKFilename, NVRVTKFilenames,
-  // 				      nDraw, seed, generators.back()));
-  //     domains.back()->setIsConvexDomain(true);
-  //     domains.back()->setMinBifurcationAngle(thetaMin);
-
-  //     stagedDomain->addStage(nTerms[i], domains.back());
-  //   }
-
-  VolumetricCostEstimator *FSprout = new VolumetricCostEstimator();
-  // SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
-  // AdimSproutingVolumetricCostEstimator *FSprout = new AdimSproutingVolumetricCostEstimator(50, 0.5, 1e+4, 40, 70*1e-6);
-
+  SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
   AbstractCostEstimator *costEstimator = FSprout;
   GeneratorData *generatorData = new GeneratorData(16000, // Levels for tree scaling for each new segment test.
 						   nFail, // Number of trials before diminish dlim.
@@ -99,15 +56,9 @@ void Vascularise(string outputFilename,
 						   0,	   // Functionality of the vessel generated, important for Object trees.
 						   false, // Indicates if dLimCorrectionFactor must be resetted to 1 when the stage begins.
 						   costEstimator); // Cost estimator for the given stage
-  DomainNVR *domain = new DomainNVR(hullVTKFilename, NVRVTKFilenames,
-				    nDraw, seed, generatorData);
-  domain->setIsConvexDomain(true);
-  domain->setIsBifPlaneContrained(false);
-  domain->setMinBifurcationAngle(thetaMin);
-  stagedDomain->addStage(nTerms[0]+1, domain);
 
-  cout << "Staged domain initiated." << endl;
 
+  // //    Import the root tree
   // Checking that the root tree's .cco file exists
   ifstream is_root_tree_correct {rootTreeFilename};
   if (!is_root_tree_correct){
@@ -115,53 +66,54 @@ void Vascularise(string outputFilename,
     exit(1);
   }
   is_root_tree_correct.close();
-  
+  std::cout << "Root tree file found, reading the root tree." << std::endl;
   SingleVesselCCOOTree *rootTree = new SingleVesselCCOOTree(rootTreeFilename, generatorData,
 							    gammas[0], deltas[0], etas[0]
 							    );
-
-  // SingleVesselCCOOTree *tree = new SingleVesselCCOOTree(x0, r0, q0,
-  // 							gammas[0], deltas[0], etas[0],
-  // 							p0, 1e-5,
-  // 							{new GeneratorData()}
-  // 							);
+  rootTree->setIsInCm(true);
+  int nTermRoot = rootTree->getNTerms();
+  int stageRoot = rootTree->getCurrentStage();
+  std::cout << "The root tree has " << nTermRoot << " terminals and current stage is " << stageRoot << std::endl;
   
+  // // The domain and generator
+  StagedDomain *stagedDomain = new StagedDomain();
+  DomainNVR *domain = new DomainNVR(hullVTKFilename, NVRVTKFilenames,
+				    nDraw, seed, generatorData);
+  domain->setIsConvexDomain(true);
+  domain->setIsBifPlaneContrained(false);
+  domain->setMinBifurcationAngle(thetaMin);
+  stagedDomain->setInitialStage(stageRoot+1);
+  stagedDomain->addStage(nTerms[0] + 1, domain);
+
+  int nTermTotal = nTermRoot + nTerms[0];
+  
+  StagedFRROTreeGenerator *treeGenerator = new StagedFRROTreeGenerator(stagedDomain,
+								       rootTree,
+								       nTermTotal,
+								       gammas,
+								       deltas,
+								       etas);
+  std::cout << "Initial DLim = " << treeGenerator->getDLim() << std::endl;
+  treeGenerator->setDLim(treeGenerator->getDLim()/4.0);
+  std::cout << "Ready to generate the macular network." << std::endl;
+
+  // // Generate the new macular vessels
+
+  SingleVesselCCOOTree *tree = static_cast<SingleVesselCCOOTree *>(treeGenerator->resume(200, "./"));
+  std::cout << "Finished generating the tree." << std::endl;
+
+  // // Save
   
   VTKObjectTreeNodalWriter *treeWriter = new VTKObjectTreeNodalWriter();
+  std::cout << "Printing the root tree." << std::endl;
   rootTree->print();
-  rootTree->save("RootTree.cco");
-  treeWriter->write("RootTree.vtp", rootTree);
-  
-  rootTree->setIsInCm(true);
-  rootTree->setCurrentStage(0);
 
-  int currentStage{rootTree->getCurrentStage()};
-  cout << "Root tree successfully loaded... ";
-  cout << "Current stage is: " << currentStage << endl; 
-  
-  long long int nTermTotal = rootTree->getNTerms();
-  cout << "Found " << nTermTotal << " terminal vessels in the root tree." << endl;
-  for (int nTerm: nTerms)
-    nTermTotal += nTerm;
-  
-  StagedFRROTreeGenerator *tree_generator = new StagedFRROTreeGenerator(stagedDomain, rootTree,
-									nTermTotal,
-									gammas,
-									deltas,
-									etas);
-  // tree_generator->setDLim(tree_generator->getDLim()/2.);
-  
-  cout << "Staged tree generator initialised." << endl;
-  
-  cout << "Starting tree generation." << endl;
-  SingleVesselCCOOTree *tree = static_cast<SingleVesselCCOOTree *>(tree_generator->resume(200, "./"));
-  cout << "Finished generating the tree." << endl;
+  std::cout << "Saving the results." << std::endl;
+  tree->save(outputFilename + "_root_with_macula.cco");
+  treeWriter->write(outputFilename + "_root_with_macula.vtp", tree);
 
-  cout << "Saving the results..." << endl;
-
-  tree->save(outputFilename + ".cco");  
-  treeWriter->write(outputFilename + ".vtp", tree);
-  cout << "Output written in " << outputFilename << ".cco and " << outputFilename << ".vtp." << endl;
+  std::cout << "Output writen in " << outputFilename + "_root_with_macula.vtp/cco" << std::endl;
+  
 }
 
 
@@ -232,7 +184,7 @@ int main(int argc, char *argv[])
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
   // AbstractConstraintFunction<double, int> *delta {new ConstantConstraintFunction<double, int>(stod(line))}; // Symmetry ratio
-  AbstractConstraintFunction<double, int> *delta {new ConstantPiecewiseConstraintFunction<double, int>({0.9, 0.8, 0.4}, {0, 2, 5})};
+  AbstractConstraintFunction<double, int> *delta {new ConstantPiecewiseConstraintFunction<double, int>({0.4, 0.8}, {0, 5})};
   
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
@@ -295,13 +247,6 @@ int main(int argc, char *argv[])
   // Random seed
   long long int seed {time(nullptr)};
 
-  double lb[3] = {-1., -1., 0.0}, ub[3] = {1.0,1.0,0.005};
-  ParallelepipedCreator *Hull = new ParallelepipedCreator(lb, ub);
-  Hull->create(hullVTKFilename);
-  vector<double> center = {0.188*1.5, 0.0, 0.0};
-  double radiusMacula   = 0.3 / 2.0;
-  CylinderCreator *Macula = new CylinderCreator(center, radiusMacula, 0.005, 10);
-  Macula->create(NVRVTKFilenames[0]);
   
   Vascularise(outputFilename,
 	      inputCCO,
