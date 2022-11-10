@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 # set the project name
 project(dcco_WholeRetina_SVP)
-project(StructuredTree)
+project(Macula)
 project(2DRetina)
 
 
@@ -30,18 +30,18 @@ link_directories(${VITA_LIBRARY_DIRS} ${VTK_LIBRARY_DIRS})
 
 # add the executable
 add_executable(dcco_WholeRetina_SVP dcco_WholeRetina_SVP.cpp)
-add_executable(StructuredTree StructuredTree.cpp)
+add_executable(Macula Macula.cpp)
 add_executable(2DRetina 2DRetina.cpp)
 
 # link libraries
 find_package(OpenMP)
 if (OpenMP_CXX_FOUND)
    target_link_libraries(dcco_WholeRetina_SVP PUBLIC VItA ${VTK_8_1_libs} OpenMP::OpenMP_CXX)
-   target_link_libraries(StructuredTree PUBLIC VItA ${VTK_8_1_libs} OpenMP::OpenMP_CXX)
+   target_link_libraries(Macula PUBLIC VItA ${VTK_8_1_libs} OpenMP::OpenMP_CXX)
    target_link_libraries(2DRetina PUBLIC VItA ${VTK_8_1_libs} OpenMP::OpenMP_CXX)		
 else()
    target_link_libraries(dcco_WholeRetina_SVP VItA ${VTK_8_1_libs})
-   target_link_libraries(StructuredTree VItA ${VTK_8_1_libs})
+   target_link_libraries(Macula VItA ${VTK_8_1_libs})
    target_link_libraries(2DRetina VItA ${VTK_8_1_libs})
 endif()
 
@@ -50,7 +50,7 @@ target_include_directories(dcco_WholeRetina_SVP PUBLIC
                            "${VITA_INCLUDE_DIRS}"
                            "${VTK_INCLUDE_DIRS}"
                            )
-target_include_directories(StructuredTree PUBLIC
+target_include_directories(Macula PUBLIC
                            "${VITA_INCLUDE_DIRS}"
                            "${VTK_INCLUDE_DIRS}"
                            )
