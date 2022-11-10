@@ -83,7 +83,13 @@ void Vascularise(string outputFilename,
 
   //     stagedDomain->addStage(nTerms[i], domains.back());
   //   }
-  SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
+
+
+
+
+  VolumetricCostEstimator *FSprout = new VolumetricCostEstimator();
+  // SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
+  // AdimSproutingVolumetricCostEstimator *FSprout = new AdimSproutingVolumetricCostEstimator(50, 0.5, 1e+4, 40, 70*1e-6);
   AbstractCostEstimator *costEstimator = FSprout;
   GeneratorData *generatorData = new GeneratorData(16000, // Levels for tree scaling for each new segment test.
 						   nFail, // Number of trials before diminish dlim.
@@ -228,7 +234,7 @@ int main(int argc, char *argv[])
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
   // AbstractConstraintFunction<double, int> *delta {new ConstantConstraintFunction<double, int>(stod(line))}; // Symmetry ratio
-  AbstractConstraintFunction<double, int> *delta {new ConstantPiecewiseConstraintFunction<double, int>({0.4, 0.8}, {0, 5})};
+  AbstractConstraintFunction<double, int> *delta {new ConstantPiecewiseConstraintFunction<double, int>({0.9, 0.8, 0.4}, {0, 2, 5})};
   
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
@@ -291,6 +297,13 @@ int main(int argc, char *argv[])
   // Random seed
   long long int seed {time(nullptr)};
 
+  double lb[3] = {-1., -1., 0.0}, ub[3] = {1.0,1.0,0.005};
+  ParallelepipedCreator *Hull = new ParallelepipedCreator(lb, ub);
+  Hull->create(hullVTKFilename);
+  vector<double> center = {0.188*1.5, 0.0, 0.0};
+  double radiusMacula   = 0.3 / 2.0;
+  CylinderCreator *Macula = new CylinderCreator(center, radiusMacula, 0.005, 10);
+  Macula->create(NVRVTKFilenames[0]);
   
   Vascularise(outputFilename,
 	      inputCCO,
