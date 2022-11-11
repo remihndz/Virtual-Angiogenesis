@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
   double fractionOfPi {stod(line)};
-  std::vector<double> thetaMin = {fractionOfPi * M_PI, fractionOfPi * M_PI, fractionOfPi * M_PI};
+  std::vector<double> thetaMin = {fractionOfPi * M_PI, fractionOfPi * M_PI, 2*fractionOfPi * M_PI};
   
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
@@ -369,7 +369,7 @@ int main(int argc, char *argv[])
 	      Omega1,
 	      Omega2,
 	      FAZ,
-	      {10, 20, 50},
+	      {20, 30, 200},
 	      gammas,
 	      deltas,
 	      etas,
