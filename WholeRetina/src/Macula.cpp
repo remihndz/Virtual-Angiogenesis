@@ -21,6 +21,7 @@
 #include<structures/vascularElements/AbstractVascularElement.h>
 #include<io/VTKObjectTreeNodalWriter.h>
 #include<structures/domain/DomainNVR.h>
+#include<structures/domain/PartiallyVascularizedDomain.h>
 #include<structures/domain/SimpleDomain2D.h>
 #include<structures/domain/NormalDistributionGenerator.h>
 #include<structures/vascularElements/SingleVessel.h>
@@ -34,31 +35,26 @@
 void Vascularise(string outputFilename,
 		 string rootTreeFilename,
 		 string hullVTKFilename,
-		 vector<string> NVRVTKFilenames,
-		 vector<long long int> nTerms,
-		 vector<AbstractConstraintFunction<double, int>*> gammas,
-		 vector<AbstractConstraintFunction<double, int>*> deltas,
-		 vector<AbstractConstraintFunction<double, int>*> etas,
-		 int nDraw, int seed, int nFail, double lLimFactor,
+		 string Omega1,
+		 string Omega2,
+		 string FAZ, 
+		 std::vector<long long int> nTerms,
+		 std::vector<AbstractConstraintFunction<double, int>*> gammas,
+		 std::vector<AbstractConstraintFunction<double, int>*> deltas,
+		 std::vector<AbstractConstraintFunction<double, int>*> etas,
+		 int nDraw, std::vector<long long int> seeds, int nFail, double lLimFactor,
 		 double perfusionAreaFactor, double closeNeighborhoodFactor, int DeltaNu,
-		 double thetaMin)
+		 std::vector<double> thetaMin)
 {  
 
+  std::cout << "The .vtp files: " << hullVTKFilename << " " << Omega1 << " " << Omega2 << " " << FAZ << std::endl;
+  
   // VolumetricCostEstimator *FSprout = new VolumetricCostEstimator();
   SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(10, 0.5, 1e+4);
   AbstractCostEstimator *costEstimator = FSprout;
-  GeneratorData *generatorData = new GeneratorData(16000, // Levels for tree scaling for each new segment test.
-						   nFail, // Number of trials before diminish dlim.
-						   lLimFactor, // Factor by which the Dlim constraint diminish after N failed trials.
-						   perfusionAreaFactor, // Factor that scales the perfusion area by which Dlim is computed.
-						   closeNeighborhoodFactor, // Factor that increase the neighborhood to search nearest neighbors.
-						   0.1, // Factor to scale the dLim to the middle point of the new vessel to avoid close neighbors.
-						   DeltaNu, // Number of bifurcation sites tested in the optimization process is given by nBifurcationTest * ( nBifurcationTest - 1 ). (default 8)
-						   0,	   // Functionality of the vessel generated, important for Object trees.
-						   false, // Indicates if dLimCorrectionFactor must be resetted to 1 when the stage begins.
-						   costEstimator); // Cost estimator for the given stage
 
-
+  // This generator is only for importing the root tree and is not used in the generation.
+  GeneratorData *generatorData = new GeneratorData(16000, nFail,lLimFactor, perfusionAreaFactor, closeNeighborhoodFactor, 0.1, DeltaNu, 0, false, costEstimator);
   // //    Import the root tree
   // Checking that the root tree's .cco file exists
   ifstream is_root_tree_correct {rootTreeFilename};
@@ -71,7 +67,6 @@ void Vascularise(string outputFilename,
   SingleVesselCCOOTree *rootTree = new SingleVesselCCOOTree(rootTreeFilename, generatorData,
 							    gammas[0], deltas[0], etas[0]
 							    );
-
   VTKObjectTreeNodalWriter *treeWriter = new VTKObjectTreeNodalWriter();
   treeWriter->write("RootTreeMacula.vtp", rootTree);
   rootTree->save("RootTreeMacula.cco");
@@ -80,17 +75,114 @@ void Vascularise(string outputFilename,
   int stageRoot = rootTree->getCurrentStage();
   std::cout << "The root tree has " << nTermRoot << " terminals and current stage is " << stageRoot << std::endl;
   
-  // // The domain and generator
-  StagedDomain *stagedDomain = new StagedDomain();
-  DomainNVR *domain = new DomainNVR(hullVTKFilename, NVRVTKFilenames,
-				    nDraw, seed, generatorData);
-  domain->setIsConvexDomain(true);
-  domain->setIsBifPlaneContrained(false);
-  domain->setMinBifurcationAngle(thetaMin);
-  stagedDomain->setInitialStage(stageRoot+1);
-  stagedDomain->addStage(nTerms[0]+1, domain);
 
-  int nTermTotal = nTermRoot + nTerms[0];
+
+  
+  // // // Stage 1, within an annulus in the outer macula
+  GeneratorData *generatorData1 = new GeneratorData(16000, // Levels for tree scaling for each new segment test.
+						    20, // Number of trials before diminish dlim.
+						    0.9, // Factor by which the Dlim constraint diminish after N failed trials.
+						    perfusionAreaFactor, // Factor that scales the perfusion area by which Dlim is computed.
+						    closeNeighborhoodFactor, // Factor that increase the neighborhood to search nearest neighbors.
+						    0.1, // Factor to scale the dLim to the middle point of the new vessel to avoid close neighbors.
+						    DeltaNu, // Number of bifurcation sites tested in the optimization process is given by nBifurcationTest * ( nBifurcationTest - 1 ).
+						    0,	   // Functionality of the vessel generated, important for Object trees.
+						    false, // Indicates if dLimCorrectionFactor must be resetted to 1 when the stage begins.
+						    costEstimator); // Cost estimator for the given stage
+  // The domain for stage 1
+  std::vector<string> VRVTK1 = {Omega1},
+    NVRVTK1 = {Omega2, FAZ};
+
+  std::cout << std::endl << "For stage 1 the VR are ";
+  for (int i = 0; i<VRVTK1.size(); i++)
+    std::cout << VRVTK1[i] << " ";
+  std::cout << std::endl << "Stage 1 NVR are ";
+  for (int i = 0; i<NVRVTK1.size(); i++)
+    std::cout << NVRVTK1[i] << " ";
+
+  
+  PartiallyVascularizedDomain *domain1 = new PartiallyVascularizedDomain(hullVTKFilename, VRVTK1, NVRVTK1,
+									 nDraw, seeds[0], generatorData1);
+  domain1->setIsConvexDomain(true);
+  domain1->setIsBifPlaneContrained(false);
+  domain1->setMinBifurcationAngle(thetaMin[0]);
+
+  domain1->savePoints(outputFilename + "domain1Points.vtp");
+  
+  // // // Stage 2, within the macula but outside the annulus of stage 1
+  GeneratorData *generatorData2 = new GeneratorData(16000, // Levels for tree scaling for each new segment test.
+						    nFail, // Number of trials before diminish dlim.
+						    lLimFactor, // Factor by which the Dlim constraint diminish after N failed trials.
+						    perfusionAreaFactor, // Factor that scales the perfusion area by which Dlim is computed.
+						    closeNeighborhoodFactor, // Factor that increase the neighborhood to search nearest neighbors.
+						    0.1, // Factor to scale the dLim to the middle point of the new vessel to avoid close neighbors.
+						    DeltaNu, // Number of bifurcation sites tested in the optimization process is given by nBifurcationTest * ( nBifurcationTest - 1 ).
+						    0,	   // Functionality of the vessel generated, important for Object trees.
+						    false, // Indicates if dLimCorrectionFactor must be resetted to 1 when the stage begins.
+						    costEstimator); // Cost estimator for the given stage
+  // The domain for stage 2
+  std::vector<string> VRVTK2 = {Omega2},
+    NVRVTK2 = {Omega1, FAZ};
+
+  std::cout << std::endl << "For stage 2 the VR are ";
+  for (int i = 0; i<VRVTK2.size(); i++)
+    std::cout << VRVTK2[i] << " ";
+  std::cout << std::endl << "Stage 2 NVR are ";
+  for (int i = 0; i<NVRVTK2.size(); i++)
+    std::cout << NVRVTK2[i] << " ";
+
+  PartiallyVascularizedDomain *domain2 = new PartiallyVascularizedDomain(hullVTKFilename, VRVTK2, NVRVTK2,
+									 nDraw, seeds[1], generatorData2);
+  domain2->setIsConvexDomain(true);
+  domain2->setIsBifPlaneContrained(false);
+  domain2->setMinBifurcationAngle(thetaMin[1]);
+
+  domain2->savePoints(outputFilename + "domain2Points.vtp");
+
+
+  // // // Stage 3, within the macula but outside the annulus of stage 1
+  GeneratorData *generatorData3 = new GeneratorData(16000, // Levels for tree scaling for each new segment test.
+						    nFail/5, // Number of trials before diminish dlim.
+						    lLimFactor, // Factor by which the Dlim constraint diminish after N failed trials.
+						    perfusionAreaFactor, // Factor that scales the perfusion area by which Dlim is computed.
+						    closeNeighborhoodFactor, // Factor that increase the neighborhood to search nearest neighbors.
+						    0.1, // Factor to scale the dLim to the middle point of the new vessel to avoid close neighbors.
+						    DeltaNu, // Number of bifurcation sites tested in the optimization process is given by nBifurcationTest * ( nBifurcationTest - 1 ).
+						    0,	   // Functionality of the vessel generated, important for Object trees.
+						    false, // Indicates if dLimCorrectionFactor must be resetted to 1 when the stage begins.
+						    costEstimator); // Cost estimator for the given stage
+  // The domain for stage 3
+  std::vector<string> VRVTK3 = {Omega1, Omega2},
+    NVRVTK3 = {FAZ};
+  std::cout << std::endl << "For stage 3 the VR are ";
+  for (int i = 0; i<VRVTK3.size(); i++)
+    std::cout << VRVTK3[i] << " ";
+  std::cout << std::endl << "Stage 3 NVR are ";
+  for (int i = 0; i<NVRVTK3.size(); i++)
+    std::cout << NVRVTK3[i] << " ";
+  std::cout << std::endl;
+  
+  PartiallyVascularizedDomain *domain3 = new PartiallyVascularizedDomain(hullVTKFilename, VRVTK3, NVRVTK3,
+									 nDraw, seeds[2], generatorData3);
+  domain3->setIsConvexDomain(true);
+  domain3->setIsBifPlaneContrained(false);
+  domain3->setMinBifurcationAngle(thetaMin[2]);
+
+  domain3->savePoints(outputFilename + "domain3Points.vtp");  
+
+  // // The domain 
+  StagedDomain *stagedDomain = new StagedDomain();
+  stagedDomain->setInitialStage(stageRoot+1);
+
+  std::cout << "Domain pointers: " << domain1 << " " << domain2 << " " << domain3 << std::endl;
+  
+  stagedDomain->addStage(nTerms[0], domain1);
+  stagedDomain->addStage(nTerms[1], domain2);
+  stagedDomain->addStage(nTerms[2], domain3);
+  
+  int nTermTotal = nTermRoot + nTerms[0] + nTerms[1] + nTerms[2];
+  std::cout << "The number of terminals for each stage: " << nTerms[0] << " " << nTerms[1] << " " << nTerms[2]
+	    << " totaling to " << nTermTotal <<  std::endl;
   
   StagedFRROTreeGenerator *treeGenerator = new StagedFRROTreeGenerator(stagedDomain,
 								       rootTree,
@@ -98,19 +190,20 @@ void Vascularise(string outputFilename,
 								       gammas,
 								       deltas,
 								       etas);
+
   std::cout << "Initial DLim = " << treeGenerator->getDLim() << std::endl;
-  treeGenerator->setDLim(treeGenerator->getDLim()/100.0);
+  // treeGenerator->setDLim(treeGenerator->getDLim()/100.0);
   std::cout << "Ready to generate the macular network." << std::endl;
 
   // // Generate the new macular vessels
 
-  SingleVesselCCOOTree *tree = static_cast<SingleVesselCCOOTree *>(treeGenerator->resume(200, "./"));
+  SingleVesselCCOOTree *tree = static_cast<SingleVesselCCOOTree *>(treeGenerator->resume(10, "./LogCCO/"));
   std::cout << "Finished generating the tree." << std::endl;
 
   // // Save
   
-  std::cout << "Printing the root tree." << std::endl;
-  rootTree->print();
+  // std::cout << "Printing the root tree." << std::endl;
+  // rootTree->print();
 
   std::cout << "Saving the results." << std::endl;
   tree->save(outputFilename + "_root_with_macula.cco");
@@ -156,7 +249,7 @@ int main(int argc, char *argv[])
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
   int nNVR {stoi(line)};  
-  vector<string> NVRVTKFilenames;
+  std::vector<string> NVRVTKFilenames;
   cout << "The " << nNVR << " non vascular regions for domain 1 are: ";
   for (int i = 0; i < nNVR; i++){
     getline(config, line);
@@ -187,8 +280,10 @@ int main(int argc, char *argv[])
 
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
-  // AbstractConstraintFunction<double, int> *delta {new ConstantConstraintFunction<double, int>(stod(line))}; // Symmetry ratio
-  AbstractConstraintFunction<double, int> *delta {new ConstantPiecewiseConstraintFunction<double, int>({0., 0.}, {0, 5})};
+  AbstractConstraintFunction<double, int> *delta0 {new ConstantConstraintFunction<double, int>(stod(line))}; // Symmetry ratio
+  // AbstractConstraintFunction<double, int> *delta0 {new ConstantPiecewiseConstraintFunction<double, int>({0.9, 0.}, {0, 5})};
+  AbstractConstraintFunction<double, int> *delta1 {new ConstantPiecewiseConstraintFunction<double, int>({0.9, 0.5}, {0, 5})};
+  AbstractConstraintFunction<double, int> *delta2 {new ConstantPiecewiseConstraintFunction<double, int>({0.9, 0.5}, {0, 5})};
   
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
@@ -201,7 +296,7 @@ int main(int argc, char *argv[])
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
   double fractionOfPi {stod(line)};
-  double thetaMin = fractionOfPi * M_PI;
+  std::vector<double> thetaMin = {fractionOfPi * M_PI, fractionOfPi * M_PI, fractionOfPi * M_PI};
   
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
@@ -238,9 +333,9 @@ int main(int argc, char *argv[])
   
   cout << "Simulation parameters read successfully." << endl;
   
-  vector<AbstractConstraintFunction<double, int>*> gammas = {gamma},
-    deltas = {delta},
-    etas = {eta};
+  std::vector<AbstractConstraintFunction<double, int>*> gammas = {gamma, gamma, gamma},
+    deltas = {delta0, delta1, delta2},
+    etas = {eta, eta, eta};
   
   // Consecutive attempts to generate a point - nFail
   int nFail = 200;
@@ -249,18 +344,25 @@ int main(int argc, char *argv[])
   // Buffer size for random point generation
   int nDraw {10000};
   // Random seed
-  long long int seed {time(nullptr)};
+  std::vector<long long int> seeds {time(nullptr), time(nullptr), time(nullptr)};
+  std::cout << "The random seeds are " << seeds[0] << ", " << seeds[1] << " and " << seeds[2] << std::endl;
 
+
+  string Omega1 = "../vtkFiles/Results/2D/Macula_omega1.vtp",
+    Omega2 = "../vtkFiles/Results/2D/Macula_omega2.vtp",
+    FAZ = "../vtkFiles/Results/2D/FAZ.vtp";
   
   Vascularise(outputFilename,
 	      inputCCO,
 	      hullVTKFilename,
-	      NVRVTKFilenames,
-	      {nTerms},
+	      Omega1,
+	      Omega2,
+	      FAZ,
+	      {10, 20, 50},
 	      gammas,
 	      deltas,
 	      etas,
-	      nDraw, seed, nFail, lLimFactor,
+	      nDraw, seeds, nFail, lLimFactor,
 	      perfusionAreaFactor, closeNeighborhoodFactor, DeltaNu,
 	      thetaMin);
 
