@@ -86,7 +86,7 @@ for k, CCOFile in enumerate(sys.argv[1:]):
     # %%
     ## !!! The data has been scaled to match the synthetic vasculature's values
     dataVisc = pd.read_csv(dataDir + 'Viscosity-vs-ShearRate.csv', skipinitialspace=True)
-    dataVisc = dataVisc/dataVisc.max()*df[['WSR', 'Viscosity']].max()
+    dataVisc.loc[dataVisc.Study == 'Nagaoka (2006)', 'Viscosity'] = dataVisc.loc[dataVisc.Study=='Nagaoka (2006)', 'Viscosity']/dataVisc['Viscosity'].max()*df['Viscosity'].max()
     dataVisc['Study'] = 'Nagaoka (2006)'
 
     dataVisc = pd.concat((dataVisc,

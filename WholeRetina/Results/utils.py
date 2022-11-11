@@ -80,7 +80,7 @@ def SolveFlow(Connectivity, Radii, Length, D, df, viscosityModel='Pries', Qperf=
     pbar[pbar<0] = 25 * mmHg_to_Pa
     
     D = np.abs(D)
-    # D[-1,-1] = 0 # Setting this entry to 0 allows to specify flow at inlet 
+    D[-1,-1] = 0 # Setting this entry to 0 allows to specify flow at inlet 
     I = np.identity(D.shape[0])
     
     M = np.block([[
