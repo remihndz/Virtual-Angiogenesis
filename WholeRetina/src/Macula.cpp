@@ -93,13 +93,6 @@ void Vascularise(string outputFilename,
   std::vector<string> VRVTK1 = {Omega1},
     NVRVTK1 = {Omega2, FAZ};
 
-  std::cout << std::endl << "For stage 1 the VR are ";
-  for (int i = 0; i<VRVTK1.size(); i++)
-    std::cout << VRVTK1[i] << " ";
-  std::cout << std::endl << "Stage 1 NVR are ";
-  for (int i = 0; i<NVRVTK1.size(); i++)
-    std::cout << NVRVTK1[i] << " ";
-
   
   PartiallyVascularizedDomain *domain1 = new PartiallyVascularizedDomain(hullVTKFilename, VRVTK1, NVRVTK1,
 									 nDraw, seeds[0], generatorData1);
@@ -107,7 +100,32 @@ void Vascularise(string outputFilename,
   domain1->setIsBifPlaneContrained(false);
   domain1->setMinBifurcationAngle(thetaMin[0]);
 
-  domain1->savePoints(outputFilename + "domain1Points.vtp");
+
+  int nTermTotal = nTermRoot + nTerms[0];
+  StagedDomain *stagedDomain = new StagedDomain();
+  stagedDomain->setInitialStage(stageRoot+1);
+  
+  stagedDomain->addStage(nTerms[0], domain1);
+
+  StagedFRROTreeGenerator *treeGenerator = new StagedFRROTreeGenerator(stagedDomain,
+								       rootTree,
+								       nTermTotal,
+								       {gammas[0]},
+								       {deltas[0]},
+								       {etas[0]});
+  // // Generate the new macular vessels
+
+  rootTree = static_cast<SingleVesselCCOOTree *>(treeGenerator->resume(10, "./LogCCO/"));
+  std::cout << "Finished generating stage 1." << std::endl;
+  
+  // // Save
+  std::cout << "Saving the results." << std::endl;
+  rootTree->save(outputFilename + "_root_with_macula_stage_1.cco");
+  treeWriter->write(outputFilename + "_root_with_macula_stage_1.vtp", rootTree);
+
+  delete treeGenerator;
+  delete stagedDomain;
+  
   
   // // // Stage 2, within the macula but outside the annulus of stage 1
   GeneratorData *generatorData2 = new GeneratorData(16000, // Levels for tree scaling for each new segment test.
@@ -124,21 +142,37 @@ void Vascularise(string outputFilename,
   std::vector<string> VRVTK2 = {Omega2},
     NVRVTK2 = {Omega1, FAZ};
 
-  std::cout << std::endl << "For stage 2 the VR are ";
-  for (int i = 0; i<VRVTK2.size(); i++)
-    std::cout << VRVTK2[i] << " ";
-  std::cout << std::endl << "Stage 2 NVR are ";
-  for (int i = 0; i<NVRVTK2.size(); i++)
-    std::cout << NVRVTK2[i] << " ";
-
   PartiallyVascularizedDomain *domain2 = new PartiallyVascularizedDomain(hullVTKFilename, VRVTK2, NVRVTK2,
 									 nDraw, seeds[1], generatorData2);
   domain2->setIsConvexDomain(true);
   domain2->setIsBifPlaneContrained(false);
   domain2->setMinBifurcationAngle(thetaMin[1]);
+ 
+  nTermTotal = rootTree->getNTerms() + nTerms[1];
+  stageRoot  = rootTree->getCurrentStage();
+  stagedDomain = new StagedDomain();
+  stagedDomain->setInitialStage(stageRoot+1); 
+  stagedDomain->addStage(nTerms[1], domain2);
 
-  domain2->savePoints(outputFilename + "domain2Points.vtp");
+  treeGenerator = new StagedFRROTreeGenerator(stagedDomain,
+					      rootTree,
+					      nTermTotal,
+					      {gammas[1]},
+					      {deltas[1]},
+					      {etas[1]});
+  // // Generate the new macular vessels
+  rootTree = static_cast<SingleVesselCCOOTree *>(treeGenerator->resume(10, "./LogCCO/"));
+  std::cout << "Finished generating stage 2." << std::endl;
+  
+  // // Save
+  std::cout << "Saving the results." << std::endl;
+  rootTree->save(outputFilename + "_root_with_macula_stage_2.cco");
+  treeWriter->write(outputFilename + "_root_with_macula_stage_2.vtp", rootTree);
 
+  delete treeGenerator;
+  delete stagedDomain;
+
+  
 
   // // // Stage 3, within the macula but outside the annulus of stage 1
   GeneratorData *generatorData3 = new GeneratorData(16000, // Levels for tree scaling for each new segment test.
@@ -154,60 +188,37 @@ void Vascularise(string outputFilename,
   // The domain for stage 3
   std::vector<string> VRVTK3 = {Omega1, Omega2},
     NVRVTK3 = {FAZ};
-  std::cout << std::endl << "For stage 3 the VR are ";
-  for (int i = 0; i<VRVTK3.size(); i++)
-    std::cout << VRVTK3[i] << " ";
-  std::cout << std::endl << "Stage 3 NVR are ";
-  for (int i = 0; i<NVRVTK3.size(); i++)
-    std::cout << NVRVTK3[i] << " ";
-  std::cout << std::endl;
   
   PartiallyVascularizedDomain *domain3 = new PartiallyVascularizedDomain(hullVTKFilename, VRVTK3, NVRVTK3,
 									 nDraw, seeds[2], generatorData3);
   domain3->setIsConvexDomain(true);
   domain3->setIsBifPlaneContrained(false);
-  domain3->setMinBifurcationAngle(thetaMin[2]);
+  domain3->setMinBifurcationAngle(thetaMin[2]);  
 
-  domain3->savePoints(outputFilename + "domain3Points.vtp");  
-
-  // // The domain 
-  StagedDomain *stagedDomain = new StagedDomain();
-  stagedDomain->setInitialStage(stageRoot+1);
-
-  std::cout << "Domain pointers: " << domain1 << " " << domain2 << " " << domain3 << std::endl;
-  
-  stagedDomain->addStage(nTerms[0], domain1);
-  stagedDomain->addStage(nTerms[1], domain2);
+  nTermTotal = rootTree->getNTerms() + nTerms[2];
+  stageRoot  = rootTree->getCurrentStage();
+  stagedDomain = new StagedDomain();
+  stagedDomain->setInitialStage(stageRoot+1); 
   stagedDomain->addStage(nTerms[2], domain3);
-  
-  int nTermTotal = nTermRoot + nTerms[0] + nTerms[1] + nTerms[2];
-  std::cout << "The number of terminals for each stage: " << nTerms[0] << " " << nTerms[1] << " " << nTerms[2]
-	    << " totaling to " << nTermTotal <<  std::endl;
-  
-  StagedFRROTreeGenerator *treeGenerator = new StagedFRROTreeGenerator(stagedDomain,
-								       rootTree,
-								       nTermTotal,
-								       gammas,
-								       deltas,
-								       etas);
 
-  std::cout << "Initial DLim = " << treeGenerator->getDLim() << std::endl;
-  // treeGenerator->setDLim(treeGenerator->getDLim()/100.0);
-  std::cout << "Ready to generate the macular network." << std::endl;
-
+  treeGenerator = new StagedFRROTreeGenerator(stagedDomain,
+					      rootTree,
+					      nTermTotal,
+					      {gammas[2]},
+					      {deltas[2]},
+					      {etas[2]});
   // // Generate the new macular vessels
 
-  SingleVesselCCOOTree *tree = static_cast<SingleVesselCCOOTree *>(treeGenerator->resume(10, "./LogCCO/"));
-  std::cout << "Finished generating the tree." << std::endl;
-
-  // // Save
+  rootTree = static_cast<SingleVesselCCOOTree *>(treeGenerator->resume(10, "./LogCCO/"));
+  std::cout << "Finished generating stage 3." << std::endl;
   
-  // std::cout << "Printing the root tree." << std::endl;
-  // rootTree->print();
-
+  // // Save
   std::cout << "Saving the results." << std::endl;
-  tree->save(outputFilename + "_root_with_macula.cco");
-  treeWriter->write(outputFilename + "_root_with_macula.vtp", tree);
+  rootTree->save(outputFilename + "_root_with_macula_stage_3.cco");
+  treeWriter->write(outputFilename + "_root_with_macula_stage_3.vtp", rootTree);
+
+  delete treeGenerator;
+  delete stagedDomain;
 
   std::cout << "Output writen in " << outputFilename + "_root_with_macula.vtp/cco" << std::endl;
   
@@ -342,7 +353,7 @@ int main(int argc, char *argv[])
   // Discretisation of the testing triangle for the bifurcation - Delta nu - Figure 1
   int DeltaNu = 7;
   // Buffer size for random point generation
-  int nDraw {10000};
+  int nDraw {1000};
   // Random seed
   std::vector<long long int> seeds {time(nullptr), time(nullptr), time(nullptr)};
   std::cout << "The random seeds are " << seeds[0] << ", " << seeds[1] << " and " << seeds[2] << std::endl;
@@ -366,14 +377,14 @@ int main(int argc, char *argv[])
 	      perfusionAreaFactor, closeNeighborhoodFactor, DeltaNu,
 	      thetaMin);
 
-  for (auto p : gammas)
-    delete p;
-  gammas.clear();
-  for (auto p : etas)
-    delete p;
-  etas.clear();
-  for (auto p : deltas)
-    delete p;
-  deltas.clear();
+  // for (auto p : gammas)
+  //   delete p;
+  // gammas.clear();
+  // for (auto p : etas)
+  //   delete p;
+  // etas.clear();
+  // for (auto p : deltas)
+  //   delete p;
+  // deltas.clear();
   return 0;
 } 
