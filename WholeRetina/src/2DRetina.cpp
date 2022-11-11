@@ -84,8 +84,8 @@ void Vascularise(string outputFilename,
   //     stagedDomain->addStage(nTerms[i], domains.back());
   //   }
 
-  VolumetricCostEstimator *FSprout = new VolumetricCostEstimator();
-  // SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
+  // VolumetricCostEstimator *FSprout = new VolumetricCostEstimator();
+  SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
   // AdimSproutingVolumetricCostEstimator *FSprout = new AdimSproutingVolumetricCostEstimator(50, 0.5, 1e+4, 40, 70*1e-6);
 
   AbstractCostEstimator *costEstimator = FSprout;
@@ -295,13 +295,13 @@ int main(int argc, char *argv[])
   // Random seed
   long long int seed {time(nullptr)};
 
-  double lb[3] = {-1., -1., 0.0}, ub[3] = {1.0,1.0,0.005};
-  ParallelepipedCreator *Hull = new ParallelepipedCreator(lb, ub);
-  Hull->create(hullVTKFilename);
-  vector<double> center = {0.188*1.5, 0.0, 0.0};
-  double radiusMacula   = 0.3 / 2.0;
-  CylinderCreator *Macula = new CylinderCreator(center, radiusMacula, 0.005, 10);
-  Macula->create(NVRVTKFilenames[0]);
+  // double lb[3] = {-1., -1., 0.0}, ub[3] = {1.0,1.0,0.005};
+  // ParallelepipedCreator *Hull = new ParallelepipedCreator(lb, ub);
+  // Hull->create(hullVTKFilename);
+  // vector<double> center = {0.188*1.5, 0.0, 0.0};
+  // double radiusMacula   = 0.3 / 2.0;
+  // CylinderCreator *Macula = new CylinderCreator(center, radiusMacula, 0.005, 10);
+  // Macula->create(NVRVTKFilenames[0]);
   
   Vascularise(outputFilename,
 	      inputCCO,

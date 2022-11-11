@@ -44,7 +44,8 @@ void Vascularise(string outputFilename,
 		 double thetaMin)
 {  
 
-  SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
+  // VolumetricCostEstimator *FSprout = new VolumetricCostEstimator();
+  SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(10, 0.5, 1e+4);
   AbstractCostEstimator *costEstimator = FSprout;
   GeneratorData *generatorData = new GeneratorData(16000, // Levels for tree scaling for each new segment test.
 						   nFail, // Number of trials before diminish dlim.
@@ -70,6 +71,10 @@ void Vascularise(string outputFilename,
   SingleVesselCCOOTree *rootTree = new SingleVesselCCOOTree(rootTreeFilename, generatorData,
 							    gammas[0], deltas[0], etas[0]
 							    );
+
+  VTKObjectTreeNodalWriter *treeWriter = new VTKObjectTreeNodalWriter();
+  treeWriter->write("RootTreeMacula.vtp", rootTree);
+  rootTree->save("RootTreeMacula.cco");
   rootTree->setIsInCm(true);
   int nTermRoot = rootTree->getNTerms();
   int stageRoot = rootTree->getCurrentStage();
@@ -83,7 +88,7 @@ void Vascularise(string outputFilename,
   domain->setIsBifPlaneContrained(false);
   domain->setMinBifurcationAngle(thetaMin);
   stagedDomain->setInitialStage(stageRoot+1);
-  stagedDomain->addStage(nTerms[0] + 1, domain);
+  stagedDomain->addStage(nTerms[0]+1, domain);
 
   int nTermTotal = nTermRoot + nTerms[0];
   
@@ -94,7 +99,7 @@ void Vascularise(string outputFilename,
 								       deltas,
 								       etas);
   std::cout << "Initial DLim = " << treeGenerator->getDLim() << std::endl;
-  treeGenerator->setDLim(treeGenerator->getDLim()/4.0);
+  treeGenerator->setDLim(treeGenerator->getDLim()/100.0);
   std::cout << "Ready to generate the macular network." << std::endl;
 
   // // Generate the new macular vessels
@@ -104,7 +109,6 @@ void Vascularise(string outputFilename,
 
   // // Save
   
-  VTKObjectTreeNodalWriter *treeWriter = new VTKObjectTreeNodalWriter();
   std::cout << "Printing the root tree." << std::endl;
   rootTree->print();
 
@@ -184,7 +188,7 @@ int main(int argc, char *argv[])
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
   // AbstractConstraintFunction<double, int> *delta {new ConstantConstraintFunction<double, int>(stod(line))}; // Symmetry ratio
-  AbstractConstraintFunction<double, int> *delta {new ConstantPiecewiseConstraintFunction<double, int>({0.4, 0.8}, {0, 5})};
+  AbstractConstraintFunction<double, int> *delta {new ConstantPiecewiseConstraintFunction<double, int>({0., 0.}, {0, 5})};
   
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
