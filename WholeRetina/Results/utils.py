@@ -47,13 +47,22 @@ def Viscosity(d, hd=0.45, Type='Pries'):
 
 # %%
 def SolveFlow(Connectivity, Radii, Length, D, df, viscosityModel='Pries', Qperf=15.0):
-    
-    muLmin_to_m3sec = 1e-9/60
-    muLmin_to_mum3sec = 1e9/60
-    mmHg_to_Pa = 133.3224 # To Pa=kg.m^-1.s^-2
-    cP_to_Pas  = 1e-3     # To Pa.s=kg.m^-1.s^-1
-    micron_to_meter = 1e-6
-    mum_to_mm = 1e-3
+
+    # The length unit will be centimeter
+    lengthUnit = 'cm'
+    if lengthUnit == 'cm':
+        m_to_lengthUnit = 1e2
+    elif lengthUnit == 'mm':
+        m_to_lengthUnit = 1e3
+    else:
+        m_to_lengthUnit = 1.0
+
+    muLmin_to_m3sec = 1e-9/60 * (m_to_lengthUnit**3)
+    muLmin_to_mum3sec = 1e9/60 / (m_to_lengthUnit**3)
+    mmHg_to_Pa = 133.3224 / m_to_lengthUnit # To Pa=kg.m^-1.s^-2
+    cP_to_Pas  = 1e-3 / m_to_lengthUnit     # To Pa.s=kg.m^-1.s^-1
+    micron_to_meter = 1e-6 * m_to_lengthUnit
+    mum_to_mm = 1e-3 
     Pa_to_dynecm2 = 1e1
 
     narcs, nnodes = Connectivity.shape
