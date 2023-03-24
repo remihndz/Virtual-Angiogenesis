@@ -21,7 +21,7 @@
 #include<structures/vascularElements/AbstractVascularElement.h>
 #include<io/VTKObjectTreeNodalWriter.h>
 #include<structures/domain/DomainNVR.h>
-#include<structures/domain/SimpleDomain2D.h>
+#include<structures/domain/SimpleDomain.h>
 #include<structures/domain/NormalDistributionGenerator.h>
 #include<structures/vascularElements/SingleVessel.h>
 #include<structures/tree/VolumetricCostEstimator.h>
@@ -29,6 +29,8 @@
 #include<structures/tree/SproutingVolumetricCostEstimator.h>
 #include<creators/ParallelepipedCreator.h>
 #include<creators/CylinderCreator.h>
+#include<structures/domain/AnnulusDistributionGenerator.h>
+#include<structures/CCOCommonStructures.h>
 
 using namespace std;
 // string rootTreeFilename = "CRA.cco";
@@ -54,39 +56,11 @@ void Vascularise(string outputFilename,
 		 double perfusionAreaFactor, double closeNeighborhoodFactor, int DeltaNu,
 		 double thetaMin)
 {
-  // Here create GeneratorDatas and Domains (one of each for each stage)
-  // TODO: change the input parameters to vectors to have different parameters for each stage
-  vector<GeneratorData*> generators;
-  vector<DomainNVR*> domains;
   StagedDomain *stagedDomain = new StagedDomain();
-  // Does initializing pointers in a loop work? Or are the objects created deleted after the loop?
-  // for (int i=0; i<nTerms.size(); i++)
-  //   {
-  //     SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
-  //     AbstractCostEstimator *costEstimator = FSprout;
-
-  //     generators.push_back(new GeneratorData(16000, // Levels for tree scaling for each new segment test.
-  // 					     nFail, // Number of trials before diminish dlim.
-  // 					     lLimFactor, // Factor by which the Dlim constraint diminish after N failed trials.
-  // 					     perfusionAreaFactor, // Factor that scales the perfusion area by which Dlim is computed.
-  // 					     closeNeighborhoodFactor, // Factor that increase the neighborhood to search nearest neighbors.
-  // 					     0.1, // Factor to scale the dLim to the middle point of the new vessel to avoid close neighbors.
-  // 					     DeltaNu, // Number of bifurcation sites tested in the optimization process is given by nBifurcationTest * ( nBifurcationTest - 1 ). (default 8)
-  // 					     1,	   // Functionality of the vessel generated, important for Object trees.
-  // 					     false, // Indicates if dLimCorrectionFactor must be resetted to 1 when the stage begins.
-  // 					     costEstimator)); // Cost estimator for the given stage 
-
-  //     domains.push_back(new DomainNVR(hullVTKFilename, NVRVTKFilenames,
-  // 				      nDraw, seed, generators.back()));
-  //     domains.back()->setIsConvexDomain(true);
-  //     domains.back()->setMinBifurcationAngle(thetaMin);
-
-  //     stagedDomain->addStage(nTerms[i], domains.back());
-  //   }
 
   // VolumetricCostEstimator *FSprout = new VolumetricCostEstimator();
-  SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
-  // AdimSproutingVolumetricCostEstimator *FSprout = new AdimSproutingVolumetricCostEstimator(50, 0.5, 1e+4, 40, 70*1e-6);
+  // SproutingVolumetricCostEstimator *FSprout = new SproutingVolumetricCostEstimator(50, 0.5, 1e+4);
+  AdimSproutingVolumetricCostEstimator *FSprout = new AdimSproutingVolumetricCostEstimator(50, 0.5, 1e+4, 40, 70*1e-6);
 
   AbstractCostEstimator *costEstimator = FSprout;
   GeneratorData *generatorData = new GeneratorData(16000, // Levels for tree scaling for each new segment test.
@@ -99,14 +73,6 @@ void Vascularise(string outputFilename,
 						   0,	   // Functionality of the vessel generated, important for Object trees.
 						   false, // Indicates if dLimCorrectionFactor must be resetted to 1 when the stage begins.
 						   costEstimator); // Cost estimator for the given stage
-  DomainNVR *domain = new DomainNVR(hullVTKFilename, NVRVTKFilenames,
-				    nDraw, seed, generatorData);
-  domain->setIsConvexDomain(true);
-  domain->setIsBifPlaneContrained(false);
-  domain->setMinBifurcationAngle(thetaMin);
-  stagedDomain->addStage(nTerms[0]+1, domain);
-
-  cout << "Staged domain initiated." << endl;
 
   // Checking that the root tree's .cco file exists
   ifstream is_root_tree_correct {rootTreeFilename};
@@ -119,6 +85,55 @@ void Vascularise(string outputFilename,
   SingleVesselCCOOTree *rootTree = new SingleVesselCCOOTree(rootTreeFilename, generatorData,
 							    gammas[0], deltas[0], etas[0]
 							    );
+
+  vector<vector<double>> vertices = rootTree->getVertices();
+  double lb[3] {-2.0,-2.0,-0.1}, ub[3] {2.0,2.0,0.0};
+  // for (auto it = vertices.begin(); it != vertices.end(); ++it) {
+  //   int i = 0;
+  //   for (auto pos = it->begin(); pos != it->end(); ++pos){
+  //     if (*pos > ub[i]) ub[i] = *pos;
+  //     else if (*pos < lb[i]) lb[i] = *pos;
+  //     i++;
+  //   }
+  // }
+  // // lb[2] = 0.00;
+  // // ub[2] = 0.0000;
+  // for (int i = 0; i<3; i++){
+  //   lb[i] = 2*lb[i];
+  //   ub[i] = 2*ub[i];
+  // }
+  // cout << lb[0] << " < x < " << ub[0] << endl;
+  // cout << lb[1] << " < y < " << ub[1] << endl;
+  
+  point opticDisc = rootTree->getRoot()->getVessels()[0]->xDist;
+  cout << opticDisc << endl;
+  AnnulusDistributionGenerator *dist = new AnnulusDistributionGenerator(0.05, opticDisc.p, -0.5,4);
+  // DomainNVR *domain = new DomainNVR(hullVTKFilename, NVRVTKFilenames,
+  // 				    nDraw, seed, generatorData);
+  // SimpleDomain *domain = new SimpleDomain(hullVTKFilename, nDraw, seed,
+  // 					  generatorData, dist);
+  ParallelepipedCreator *para = new ParallelepipedCreator(lb, ub);
+  para->create("tmp.vtk");
+  SimpleDomain *domain = new SimpleDomain("tmp.vtk", nDraw, seed,
+					  generatorData, dist);
+  domain->setIsConvexDomain(true);
+  domain->setIsBifPlaneContrained(false);
+  domain->setMinBifurcationAngle(thetaMin);
+  domain->setOpticDisc(opticDisc);
+  stagedDomain->addStage(nTerms[0]+1, domain);
+  stagedDomain->setOpticDisc(opticDisc);  
+  
+  ofstream f;
+    f.open("RandomPoints.dat");
+    vector<point> points = dist->getNPoints(10000);
+    for (point p : points)
+      {
+	f << p.p[0] << ' ' << p.p[1] << " " << p.p[2] << endl;
+      }
+    f.close();
+
+
+  cout << "Staged domain initiated." << endl;
 
   // SingleVesselCCOOTree *tree = new SingleVesselCCOOTree(x0, r0, q0,
   // 							gammas[0], deltas[0], etas[0],
@@ -167,7 +182,10 @@ void Vascularise(string outputFilename,
 
 int main(int argc, char *argv[])
 {
+  omp_set_dynamic(0);
+  omp_set_num_threads(5);
   cout << omp_get_num_threads() << " threads running." << endl;
+  cout << omp_get_max_threads() << " threads available." << endl;
 
   // Read the configuration file passed as command line argument
   string ConfigurationFileName = argv[1];
@@ -232,7 +250,7 @@ int main(int argc, char *argv[])
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
   // AbstractConstraintFunction<double, int> *delta {new ConstantConstraintFunction<double, int>(stod(line))}; // Symmetry ratio
-  AbstractConstraintFunction<double, int> *delta {new ConstantPiecewiseConstraintFunction<double, int>({0.9, 0.8, 0.4}, {0, 2, 5})};
+  AbstractConstraintFunction<double, int> *delta {new ConstantPiecewiseConstraintFunction<double, int>({0.1, 0.8, 0.4}, {0, 10, 100})};
   
   config.ignore(numeric_limits<streamsize>::max(), '\n');
   getline(config, line);
@@ -287,11 +305,11 @@ int main(int argc, char *argv[])
     etas = {eta};
   
   // Consecutive attempts to generate a point - nFail
-  int nFail = 200;
+  int nFail = 20;
   // Discretisation of the testing triangle for the bifurcation - Delta nu - Figure 1
   int DeltaNu = 7;
   // Buffer size for random point generation
-  int nDraw {10000};
+  int nDraw {1000};
   // Random seed
   long long int seed {time(nullptr)};
 

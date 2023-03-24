@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.10)
 project(dcco_WholeRetina_SVP)
 project(Macula)
 project(2DRetina)
+project(3DSCP)
 
 
 # specify the C++ standard
@@ -32,17 +33,20 @@ link_directories(${VITA_LIBRARY_DIRS} ${VTK_LIBRARY_DIRS})
 add_executable(dcco_WholeRetina_SVP dcco_WholeRetina_SVP.cpp)
 add_executable(Macula Macula.cpp)
 add_executable(2DRetina 2DRetina.cpp)
+add_executable(3DSCP 3DSCP.cpp)
 
 # link libraries
 find_package(OpenMP)
 if (OpenMP_CXX_FOUND)
    target_link_libraries(dcco_WholeRetina_SVP PUBLIC VItA ${VTK_8_1_libs} OpenMP::OpenMP_CXX)
    target_link_libraries(Macula PUBLIC VItA ${VTK_8_1_libs} OpenMP::OpenMP_CXX)
-   target_link_libraries(2DRetina PUBLIC VItA ${VTK_8_1_libs} OpenMP::OpenMP_CXX)		
+   target_link_libraries(2DRetina PUBLIC VItA ${VTK_8_1_libs} OpenMP::OpenMP_CXX)
+   target_link_libraries(3DSCP PUBLIC VItA ${VTK_8_1_libs} OpenMP::OpenMP_CXX)			
 else()
    target_link_libraries(dcco_WholeRetina_SVP VItA ${VTK_8_1_libs})
    target_link_libraries(Macula VItA ${VTK_8_1_libs})
    target_link_libraries(2DRetina VItA ${VTK_8_1_libs})
+   target_link_libraries(3DSCP VItA ${VTK_8_1_libs})
 endif()
 
 # add all include directories needed for compilation
@@ -55,6 +59,10 @@ target_include_directories(Macula PUBLIC
                            "${VTK_INCLUDE_DIRS}"
                            )
 target_include_directories(2DRetina PUBLIC
+                           "${VITA_INCLUDE_DIRS}"
+                           "${VTK_INCLUDE_DIRS}"
+                           )
+target_include_directories(3DSCP PUBLIC
                            "${VITA_INCLUDE_DIRS}"
                            "${VTK_INCLUDE_DIRS}"
                            )
